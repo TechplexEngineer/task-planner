@@ -24,12 +24,14 @@
 ## Task 1: Cloudflare D1 project scaffolding
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `vite.config.ts`
 - Modify: `src/app.d.ts`
 - Create: `wrangler.jsonc`
 
 **Interfaces:**
+
 - Produces: `App.Platform.env.DB: D1Database`, available to every server `load`/action/`+server.ts` via `event.platform.env.DB`.
 
 - [ ] **Step 1: Install dependencies**
@@ -180,6 +182,7 @@ git commit -m "chore: scaffold Cloudflare D1 binding via adapter-cloudflare and 
 ## Task 2: Drizzle schema and D1 migrations
 
 **Files:**
+
 - Create: `src/lib/server/db/schema.ts`
 - Create: `src/lib/server/db/client.ts`
 - Create: `drizzle.config.ts`
@@ -187,6 +190,7 @@ git commit -m "chore: scaffold Cloudflare D1 binding via adapter-cloudflare and 
 - Create: `migrations/` (generated)
 
 **Interfaces:**
+
 - Consumes: `App.Platform.env.DB: D1Database` (Task 1).
 - Produces: `getDb(d1: D1Database): Db` and exported tables `projects`, `tasks`, `dependencies`, `taskPositions` from `$lib/server/db/schema`, used by every repository in later tasks.
 
@@ -307,11 +311,13 @@ git commit -m "feat: add Drizzle schema and D1 migrations"
 ## Task 3: Cycle detection
 
 **Files:**
+
 - Create: `src/lib/server/scheduling/types.ts`
 - Create: `src/lib/server/scheduling/cycle-detection.ts`
 - Test: `src/lib/server/scheduling/cycle-detection.test.ts`
 
 **Interfaces:**
+
 - Produces: `SchedulingEdge { predecessorId: number; successorId: number }` (shared by Tasks 4 and 5); `wouldCreateCycle(existingEdges: SchedulingEdge[], newEdge: SchedulingEdge): boolean`, used by `dependencies` repository in Task 7.
 
 - [ ] **Step 1: Write the shared types**
@@ -420,10 +426,12 @@ git commit -m "feat: add dependency cycle detection"
 ## Task 4: Layer assignment (graph auto-layout columns)
 
 **Files:**
+
 - Create: `src/lib/server/scheduling/layout.ts`
 - Test: `src/lib/server/scheduling/layout.test.ts`
 
 **Interfaces:**
+
 - Consumes: `SchedulingEdge` (Task 3).
 - Produces: `computeLayers(taskIds: number[], edges: SchedulingEdge[]): Map<number, number>`, used by `+layout.server.ts` in Task 7 and by the Graph view in a later plan.
 
@@ -473,10 +481,7 @@ describe('computeLayers', () => {
 	});
 
 	it('leaves a disconnected task at layer 0', () => {
-		const layers = computeLayers(
-			[1, 2, 99],
-			[{ predecessorId: 1, successorId: 2 }]
-		);
+		const layers = computeLayers([1, 2, 99], [{ predecessorId: 1, successorId: 2 }]);
 		expect(layers.get(99)).toBe(0);
 	});
 });
@@ -533,10 +538,12 @@ git commit -m "feat: add dependency layer assignment for graph auto-layout"
 ## Task 5: CPM scheduling (critical path, slack, milestones)
 
 **Files:**
+
 - Create: `src/lib/server/scheduling/cpm.ts`
 - Test: `src/lib/server/scheduling/cpm.test.ts`
 
 **Interfaces:**
+
 - Consumes: `SchedulingEdge` (Task 3).
 - Produces: `SchedulingTask { id: number; durationDays: number }`, `ScheduleEntry { earliestStart, earliestFinish, latestStart, latestFinish, slack, onCriticalPath }`, `computeSchedule(tasks: SchedulingTask[], edges: SchedulingEdge[]): Map<number, ScheduleEntry>` — used by `+layout.server.ts` in Task 7 and by the Gantt view in a later plan.
 
@@ -726,12 +733,14 @@ git commit -m "feat: add CPM scheduling with critical path and slack"
 ## Task 6: Project repository and project switcher
 
 **Files:**
+
 - Create: `src/lib/server/repositories/projects.ts`
 - Modify: `src/routes/+page.server.ts` (new file)
 - Modify: `src/routes/+page.svelte`
 - Test: `e2e/project-switcher.e2e.ts`
 
 **Interfaces:**
+
 - Consumes: `getDb`, `Db`, `projects`/`tasks`/`dependencies`/`taskPositions` tables (Task 2).
 - Produces: `listProjects(db)`, `createProject(db, name)`, `renameProject(db, id, name)`, `deleteProject(db, id)`, `getProject(db, id)` from `$lib/server/repositories/projects` — `getProject` is consumed by Task 7's layout load.
 
@@ -895,7 +904,11 @@ test('create, rename, and delete a project', async ({ page }) => {
 	await row.getByRole('button', { name: 'Rename' }).click();
 	await expect(page.locator('li').filter({ hasText: renamedName })).toBeVisible();
 
-	await page.locator('li').filter({ hasText: renamedName }).getByRole('button', { name: 'Delete' }).click();
+	await page
+		.locator('li')
+		.filter({ hasText: renamedName })
+		.getByRole('button', { name: 'Delete' })
+		.click();
 	await expect(page.locator('li').filter({ hasText: renamedName })).not.toBeVisible();
 });
 ```
@@ -917,6 +930,7 @@ git commit -m "feat: add project repository and project switcher"
 ## Task 7: Task and dependency CRUD — List view
 
 **Files:**
+
 - Create: `src/lib/server/repositories/tasks.ts`
 - Create: `src/lib/server/repositories/dependencies.ts`
 - Create: `src/routes/project/[id]/+layout.server.ts`
@@ -926,6 +940,7 @@ git commit -m "feat: add project repository and project switcher"
 - Test: `e2e/list-view.e2e.ts`
 
 **Interfaces:**
+
 - Consumes: `getDb`, `Db`, schema tables (Task 2); `wouldCreateCycle`, `SchedulingEdge` (Task 3); `computeLayers` (Task 4); `computeSchedule`, `SchedulingTask`, `ScheduleEntry` (Task 5); `getProject` (Task 6).
 - Produces: `listTasksForProject`, `createTask`, `updateTask`, `deleteTask`, `reorderTasks` from `$lib/server/repositories/tasks`; `listDependenciesForProject`, `createDependency`, `deleteDependency`, `CycleError` from `$lib/server/repositories/dependencies`; page data shape `{ project, tasks: (Task & { schedule: ScheduleEntry; layer: number })[], dependencies: Dependency[] }` from `/project/[id]` layout, consumed by Task 8 and by the Graph/Gantt views in later plans.
 
@@ -960,8 +975,7 @@ export async function listTasksForProject(db: Db, projectId: number) {
 
 export async function createTask(db: Db, input: NewTaskInput) {
 	const existing = await listTasksForProject(db, input.projectId);
-	const nextRank =
-		existing.length === 0 ? 1 : Math.max(...existing.map((t) => t.priorityRank)) + 1;
+	const nextRank = existing.length === 0 ? 1 : Math.max(...existing.map((t) => t.priorityRank)) + 1;
 	const createdAt = new Date().toISOString();
 	const durationDays = input.type === 'milestone' ? 0 : input.durationDays;
 	const [task] = await db
@@ -1081,7 +1095,10 @@ export const load: LayoutServerLoad = async ({ params, platform }) => {
 		tasks.map((t) => ({ id: t.id, durationDays: t.durationDays })),
 		edges
 	);
-	const layers = computeLayers(tasks.map((t) => t.id), edges);
+	const layers = computeLayers(
+		tasks.map((t) => t.id),
+		edges
+	);
 
 	const tasksWithSchedule = tasks.map((task) => ({
 		...task,
@@ -1152,9 +1169,7 @@ export const actions: Actions = {
 		const status = data.get('status');
 		const durationDays = data.get('durationDays');
 		await updateTask(db, id, {
-			...(typeof status === 'string'
-				? { status: status as 'todo' | 'in_progress' | 'done' }
-				: {}),
+			...(typeof status === 'string' ? { status: status as 'todo' | 'in_progress' | 'done' } : {}),
 			...(durationDays !== null ? { durationDays: Number(durationDays) } : {})
 		});
 	},
@@ -1231,7 +1246,11 @@ Create `src/routes/project/[id]/list/+page.svelte`:
 
 <h2>Task list</h2>
 
-<ul use:dndzone={{ items, flipDurationMs: 150 }} onconsider={handleConsider} onfinalize={handleFinalize}>
+<ul
+	use:dndzone={{ items, flipDurationMs: 150 }}
+	onconsider={handleConsider}
+	onfinalize={handleFinalize}
+>
 	{#each items as task (task.id)}
 		<li class:critical={task.schedule.onCriticalPath}>
 			<span>{task.type === 'milestone' ? '◆' : '▢'}</span>
@@ -1332,7 +1351,9 @@ test('create tasks, add a dependency, reject a cycle, and see the critical path 
 	await predecessorSelect.selectOption({ label: 'Buy bread' });
 	await successorSelect.selectOption({ label: 'Spread peanut butter' });
 	await page.getByRole('button', { name: 'Add dependency' }).click();
-	await expect(page.locator('li').filter({ hasText: 'Buy bread → Spread peanut butter' })).toBeVisible();
+	await expect(
+		page.locator('li').filter({ hasText: 'Buy bread → Spread peanut butter' })
+	).toBeVisible();
 
 	// Attempting the reverse dependency should be rejected as a cycle.
 	await predecessorSelect.selectOption({ label: 'Spread peanut butter' });
@@ -1342,7 +1363,9 @@ test('create tasks, add a dependency, reject a cycle, and see the critical path 
 
 	// Both tasks are on the only path through the graph, so both are critical.
 	await expect(page.locator('li.critical').filter({ hasText: 'Buy bread' })).toBeVisible();
-	await expect(page.locator('li.critical').filter({ hasText: 'Spread peanut butter' })).toBeVisible();
+	await expect(
+		page.locator('li.critical').filter({ hasText: 'Spread peanut butter' })
+	).toBeVisible();
 });
 ```
 
@@ -1363,12 +1386,14 @@ git commit -m "feat: add task/dependency CRUD and the List view"
 ## Task 8: Dependency-order violation warnings
 
 **Files:**
+
 - Create: `src/lib/order-validation.ts`
 - Test: `src/lib/order-validation.test.ts`
 - Modify: `src/routes/project/[id]/list/+page.svelte`
 - Test: `e2e/list-order-warning.e2e.ts`
 
 **Interfaces:**
+
 - Consumes: page data shape `{ tasks, dependencies }` (Task 7).
 - Produces: `findOrderViolations(tasks: { id: number; priorityRank: number }[], dependencies: { predecessorId: number; successorId: number }[]): Set<number>` from `$lib/order-validation`.
 
@@ -1493,10 +1518,10 @@ In `src/routes/project/[id]/list/+page.svelte`, add the import and derived value
 And inside the `{#each items as task (task.id)}` block, add the warning badge right after the duration span:
 
 ```svelte
-			<span>{task.durationDays}d</span>
-			{#if violatingTaskIds.has(task.id)}
-				<span class="warning">⚠ ranked above a predecessor</span>
-			{/if}
+<span>{task.durationDays}d</span>
+{#if violatingTaskIds.has(task.id)}
+	<span class="warning">⚠ ranked above a predecessor</span>
+{/if}
 ```
 
 Add the warning style next to `.critical`:
@@ -1552,13 +1577,12 @@ test('shows a warning when a successor is ranked above its predecessor', async (
 		.getAttribute('value');
 
 	// Swap the order so the successor (spread) is ranked before its predecessor (buy bread).
-	await page.locator('input[name="orderedIds"]').evaluate(
-		(el: HTMLInputElement, value: string) => {
-			el.value = value;
-		},
-		`${spreadId},${breadId}`
-	);
-	await page.locator('form[action="?/reorder"]').evaluate((form: HTMLFormElement) => form.requestSubmit());
+	await page.locator('input[name="orderedIds"]').evaluate((el: HTMLInputElement, value: string) => {
+		el.value = value;
+	}, `${spreadId},${breadId}`);
+	await page
+		.locator('form[action="?/reorder"]')
+		.evaluate((form: HTMLFormElement) => form.requestSubmit());
 
 	await expect(page.locator('.warning')).toHaveCount(2);
 });

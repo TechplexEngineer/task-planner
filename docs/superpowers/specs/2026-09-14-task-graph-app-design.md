@@ -45,15 +45,18 @@ Single Cloudflare D1 database, accessed only from SvelteKit server code
 `drizzle-orm/d1`.
 
 **`projects`**
+
 - `id`, `name`, `start_date` (CPM anchor date), `created_at`
 
 **`tasks`**
+
 - `id`, `project_id`, `title`, `description`, `type` (`task` | `milestone`),
   `duration_days` (milestones always `0`), `status`
   (`todo` | `in_progress` | `done`), `priority_rank` (integer, drives manual
   list order), `created_at`
 
 **`dependencies`**
+
 - `id`, `project_id`, `predecessor_id`, `successor_id`
 
 This is the single source of truth for graph arrows, Gantt dependency lines,
@@ -62,6 +65,7 @@ predecessors in this table. Every edge write runs cycle detection first and is
 rejected (with an inline error) if it would create a cycle.
 
 **`task_positions`** (graph view manual override)
+
 - `task_id`, `offset_x`, `offset_y` — an offset from the computed auto-layout
   position, so manual nudges survive re-layout unless the task's structural
   layer changes enough to invalidate the offset.
@@ -85,7 +89,7 @@ computation happens once per load, not per view.
 
 - **Layout**: nodes auto-arranged into columns by `layer`. Tasks in the same
   column have no dependency ordering between them and can run in parallel —
-  the column *is* the parallelism signal. Within a column, order by
+  the column _is_ the parallelism signal. Within a column, order by
   `priority_rank` as a simple, sufficient crossing-reduction heuristic.
 - **Manual override**: dragging a node writes an `(offset_x, offset_y)` to
   `task_positions`. Re-layout (triggered on structural change — task/edge
