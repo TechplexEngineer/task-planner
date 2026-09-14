@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { dndzone, type DndEvent } from 'svelte-dnd-action';
+	import { findOrderViolations } from '$lib/order-validation';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -9,6 +10,8 @@
 	$effect(() => {
 		items = data.tasks.map((t) => ({ ...t }));
 	});
+
+	let violatingTaskIds = $derived(findOrderViolations(data.tasks, data.dependencies));
 
 	function handleConsider(e: CustomEvent<DndEvent<(typeof items)[number]>>) {
 		items = e.detail.items;
@@ -37,6 +40,9 @@
 			<strong>{task.title}</strong>
 			<span>{task.status}</span>
 			<span>{task.durationDays}d</span>
+			{#if violatingTaskIds.has(task.id)}
+				<span class="warning">⚠ ranked above a predecessor</span>
+			{/if}
 			<form method="POST" action="?/deleteTask" use:enhance>
 				<input type="hidden" name="id" value={task.id} />
 				<button type="submit">Delete</button>
@@ -100,5 +106,8 @@
 <style>
 	.critical {
 		outline: 2px solid crimson;
+	}
+	.warning {
+		color: darkorange;
 	}
 </style>
