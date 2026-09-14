@@ -60,6 +60,9 @@
 	<input type="number" name="durationDays" min="0" value="1" />
 	<button type="submit">Add</button>
 </form>
+{#if form?.formName === 'createTask' && form.error}
+	<p class="error">{form.error}</p>
+{/if}
 
 <h3>Add dependency</h3>
 <form method="POST" action="?/createDependency" use:enhance>
@@ -76,7 +79,7 @@
 	</select>
 	<button type="submit">Add dependency</button>
 </form>
-{#if form?.error}
+{#if form?.formName === 'createDependency' && form.error}
 	<p class="error">{form.error}</p>
 {/if}
 

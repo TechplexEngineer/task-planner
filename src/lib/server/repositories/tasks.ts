@@ -45,7 +45,15 @@ export async function createTask(db: Db, input: NewTaskInput) {
 
 export async function updateTask(db: Db, id: number, patch: TaskPatch) {
 	const value = { ...patch };
-	if (value.type === 'milestone') value.durationDays = 0;
+	if (value.type === 'milestone') {
+		value.durationDays = 0;
+	} else if (value.type === undefined && value.durationDays !== undefined) {
+		// The patch doesn't say what type this task is, but it might already be a
+		// milestone in the database — the milestone-implies-zero-duration invariant
+		// must hold regardless of which fields a given caller happens to patch.
+		const current = await db.select().from(tasks).where(eq(tasks.id, id)).get();
+		if (current?.type === 'milestone') value.durationDays = 0;
+	}
 	await db.update(tasks).set(value).where(eq(tasks.id, id));
 }
 

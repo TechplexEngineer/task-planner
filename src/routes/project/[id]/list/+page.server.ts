@@ -13,7 +13,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const title = data.get('title');
 		if (typeof title !== 'string' || title.trim() === '') {
-			return fail(400, { error: 'Title is required' });
+			return fail(400, { formName: 'createTask', error: 'Title is required' });
 		}
 		const type = data.get('type') === 'milestone' ? 'milestone' : 'task';
 		const durationDays = Number(data.get('durationDays') ?? 1);
@@ -53,7 +53,7 @@ export const actions: Actions = {
 			await createDependency(db, Number(params.id), predecessorId, successorId);
 		} catch (err) {
 			if (err instanceof CycleError) {
-				return fail(400, { error: err.message });
+				return fail(400, { formName: 'createDependency', error: err.message });
 			}
 			throw err;
 		}
