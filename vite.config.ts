@@ -1,14 +1,10 @@
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
-import { cloudflare } from '@cloudflare/vite-plugin';
 import adapter from '@sveltejs/adapter-cloudflare';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [
-		// TODO: cloudflare() plugin breaks SvelteKit routing in dev mode
-		// The D1 binding works fine with just the adapter-cloudflare
-		// cloudflare(),
 		sveltekit({
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
