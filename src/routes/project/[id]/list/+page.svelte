@@ -6,10 +6,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let items = $state(data.tasks.map((t) => ({ ...t })));
-	$effect(() => {
-		items = data.tasks.map((t) => ({ ...t }));
-	});
+	let items = $derived(data.tasks.map((t) => ({ ...t })));
 
 	let violatingTaskIds = $derived(findOrderViolations(data.tasks, data.dependencies));
 

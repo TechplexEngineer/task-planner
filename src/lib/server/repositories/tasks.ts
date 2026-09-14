@@ -19,7 +19,12 @@ export interface TaskPatch {
 }
 
 export async function listTasksForProject(db: Db, projectId: number) {
-	return db.select().from(tasks).where(eq(tasks.projectId, projectId)).all();
+	return db
+		.select()
+		.from(tasks)
+		.where(eq(tasks.projectId, projectId))
+		.orderBy(tasks.priorityRank, tasks.id)
+		.all();
 }
 
 export async function createTask(db: Db, input: NewTaskInput) {

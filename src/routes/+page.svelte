@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -10,7 +11,7 @@
 <ul>
 	{#each data.projects as project (project.id)}
 		<li>
-			<a href={`/project/${project.id}/list`}>{project.name}</a>
+			<a href={resolve('/project/[id]/list', { id: String(project.id) })}>{project.name}</a>
 			<form method="POST" action="?/rename" use:enhance>
 				<input type="hidden" name="id" value={project.id} />
 				<input type="text" name="name" value={project.name} aria-label="Rename project" />

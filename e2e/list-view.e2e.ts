@@ -42,3 +42,48 @@ test('create tasks, add a dependency, reject a cycle, and see the critical path 
 		page.locator('li.critical').filter({ hasText: 'Spread peanut butter' })
 	).toBeVisible();
 });
+
+test('reordering tasks keeps the new order after the page data refetches', async ({ page }) => {
+	const projectName = `E2E Reorder ${Date.now()}`;
+
+	await page.goto('/');
+	await page.getByLabel('New project name').fill(projectName);
+	await page.getByRole('button', { name: 'Create project' }).click();
+	await page.locator('li').filter({ hasText: projectName }).getByRole('link').click();
+
+	await expect(page.locator('h2', { hasText: 'Task list' })).toBeVisible();
+
+	await page.getByPlaceholder('Title').fill('First task');
+	await page.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(page.locator('li').filter({ hasText: 'First task' })).toBeVisible();
+
+	await page.getByPlaceholder('Title').fill('Second task');
+	await page.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(page.locator('li').filter({ hasText: 'Second task' })).toBeVisible();
+
+	const firstId = await page
+		.locator('li')
+		.filter({ hasText: 'First task' })
+		.locator('form[action="?/deleteTask"] input[name="id"]')
+		.getAttribute('value');
+	const secondId = await page
+		.locator('li')
+		.filter({ hasText: 'Second task' })
+		.locator('form[action="?/deleteTask"] input[name="id"]')
+		.getAttribute('value');
+
+	// Drive the ?/reorder action directly (same action the drag handler submits)
+	// to put "Second task" ahead of "First task".
+	await page.locator('input[name="orderedIds"]').evaluate((el: HTMLInputElement, value: string) => {
+		el.value = value;
+	}, `${secondId},${firstId}`);
+	await page
+		.locator('form[action="?/reorder"]')
+		.evaluate((form: HTMLFormElement) => form.requestSubmit());
+
+	// After invalidateAll() refetches tasks, the rendered order must reflect the
+	// new priority_rank — it must not revert to insertion order.
+	await expect
+		.poll(() => page.locator('li strong').allTextContents())
+		.toEqual(['Second task', 'First task']);
+});
