@@ -20,6 +20,10 @@ test('deleting a dependency edge and then a task removes them from the graph', a
 	await predecessorSelect.selectOption({ label: 'First' });
 	await successorSelect.selectOption({ label: 'Second' });
 	await page.getByRole('button', { name: 'Add dependency' }).click();
+	// Wait for the dependency's use:enhance submission (and its invalidateAll) to
+	// settle before navigating away - otherwise the still-in-flight form action can
+	// win a race against the Graph link's navigation and leave us on the List view.
+	await expect(page.locator('li').filter({ hasText: 'First → Second' })).toBeVisible();
 
 	await page.getByRole('link', { name: 'Graph' }).click();
 	await expect(page.locator('line.edge')).toHaveCount(1);

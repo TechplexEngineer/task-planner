@@ -10,6 +10,10 @@ test('hovering a node and clicking + creates a connected successor', async ({ pa
 
 	await page.getByPlaceholder('Title').fill('Root task');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
+	// Wait for the task's use:enhance submission (and its invalidateAll) to settle
+	// before navigating away - otherwise the still-in-flight form action can win a
+	// race against the Graph link's navigation and leave us on the List view.
+	await expect(page.locator('li').filter({ hasText: 'Root task' })).toBeVisible();
 	await page.getByRole('link', { name: 'Graph' }).click();
 
 	await expect(page.locator('g[data-task-id]')).toHaveCount(1);
