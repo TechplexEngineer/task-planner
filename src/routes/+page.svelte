@@ -14,7 +14,13 @@
 			<a href={resolve('/project/[id]/list', { id: String(project.id) })}>{project.name}</a>
 			<form method="POST" action="?/rename" use:enhance>
 				<input type="hidden" name="id" value={project.id} />
-				<input type="text" name="name" value={project.name} aria-label="Rename project" />
+				<input
+					type="text"
+					name="name"
+					value={project.name}
+					aria-label="Rename project"
+					class="form-control"
+				/>
 				<button type="submit">Rename</button>
 			</form>
 			<form method="POST" action="?/delete" use:enhance>
@@ -32,6 +38,7 @@
 		placeholder="New project name"
 		aria-label="New project name"
 		required
+		class="form-control"
 	/>
 	<button type="submit">Create project</button>
 </form>
