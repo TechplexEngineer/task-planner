@@ -198,6 +198,8 @@
 		deleteDependencyIdInput.value = String(dependencyId);
 		deleteDependencyForm.requestSubmit();
 	}
+
+	let hoveredDependencyId = $state<number | null>(null);
 </script>
 
 <h2>Graph</h2>
@@ -217,21 +219,32 @@
 		{@const from = tasks.find((t) => t.id === dep.predecessorId)}
 		{@const to = tasks.find((t) => t.id === dep.successorId)}
 		{#if from && to}
-			<line
-				class="edge"
-				x1={from.x + NODE_SIZE}
-				y1={from.y + NODE_SIZE / 2}
-				x2={to.x}
-				y2={to.y + NODE_SIZE / 2}
-			/>
-			<line
-				class="edge-hit-area"
-				x1={from.x + NODE_SIZE}
-				y1={from.y + NODE_SIZE / 2}
-				x2={to.x}
-				y2={to.y + NODE_SIZE / 2}
-				onclick={() => handleDeleteDependency(dep.id)}
-			/>
+			{@const x1 = from.x + NODE_SIZE}
+			{@const y1 = from.y + NODE_SIZE / 2}
+			{@const x2 = to.x}
+			{@const y2 = to.y + NODE_SIZE / 2}
+			<g
+				onpointerenter={() => (hoveredDependencyId = dep.id)}
+				onpointerleave={() => (hoveredDependencyId = null)}
+			>
+				<line class="edge" {x1} {y1} {x2} {y2} />
+				<line class="edge-hit-area" {x1} {y1} {x2} {y2} />
+				{#if hoveredDependencyId === dep.id}
+					<g
+						class="delete-dependency-button"
+						onpointerdown={(e) => e.stopPropagation()}
+						onclick={() => handleDeleteDependency(dep.id)}
+					>
+						<circle cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} r="8" />
+						<text
+							x={(x1 + x2) / 2}
+							y={(y1 + y2) / 2}
+							text-anchor="middle"
+							dominant-baseline="middle">×</text
+						>
+					</g>
+				{/if}
+			</g>
 		{/if}
 	{/each}
 	{#if connectorFrom !== null && connectorPointer}
@@ -356,7 +369,17 @@
 	.edge-hit-area {
 		stroke: transparent;
 		stroke-width: 14;
+	}
+	.delete-dependency-button {
 		cursor: pointer;
+	}
+	.delete-dependency-button circle {
+		fill: crimson;
+	}
+	.delete-dependency-button text {
+		fill: white;
+		pointer-events: none;
+		font-size: 12px;
 	}
 	.details-popover {
 		position: fixed;

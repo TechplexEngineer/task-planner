@@ -30,10 +30,11 @@ test('deleting a dependency edge and then a task removes them from the graph', a
 
 	// Playwright's actionability check computes visibility from a content quad that,
 	// for stroke-only SVG shapes like <line>, doesn't account for stroke-width (even
-	// though getBoundingClientRect/boundingBox() does) - so a plain .click() reports
-	// the element as "not visible" despite it being clickable by real users. Dispatch
-	// the event directly to exercise the real onclick handler.
-	await page.locator('.edge-hit-area').dispatchEvent('click');
+	// though getBoundingClientRect/boundingBox() does) - so a plain .hover() reports
+	// the element as "not visible" despite it being hoverable by real users. Dispatch
+	// the event directly to reveal the edge's delete control, then click it.
+	await page.locator('.edge-hit-area').dispatchEvent('pointerenter');
+	await page.locator('.delete-dependency-button').click();
 	await expect(page.locator('line.edge')).toHaveCount(0);
 
 	await page.locator('g[data-task-id]').first().locator('rect.node').hover();
