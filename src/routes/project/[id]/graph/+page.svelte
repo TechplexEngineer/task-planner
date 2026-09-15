@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
 	import GraphNode from './GraphNode.svelte';
-	import { NODE_SIZE, computeBasePositions } from '$lib/graph-layout';
+	import { NODE_SIZE, VIEW_WIDTH, VIEW_HEIGHT, computeBasePositions } from '$lib/graph-layout';
 	import {
 		DEFAULT_VIEWPORT,
 		panViewport,
@@ -14,9 +14,6 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-
-	const VIEW_WIDTH = 900;
-	const VIEW_HEIGHT = 600;
 
 	let viewport = $state<Viewport>(DEFAULT_VIEWPORT);
 	let svgEl: SVGSVGElement | undefined = $state();

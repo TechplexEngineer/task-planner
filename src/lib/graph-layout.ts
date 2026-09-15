@@ -1,6 +1,8 @@
 export const GRAPH_COLUMN_WIDTH = 220;
 export const GRAPH_ROW_HEIGHT = 120;
 export const NODE_SIZE = 96;
+export const VIEW_WIDTH = 900;
+export const VIEW_HEIGHT = 600;
 
 export interface Point {
 	x: number;
