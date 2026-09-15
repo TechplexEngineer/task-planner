@@ -1306,6 +1306,11 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: replace the `<text>` el
 			onTitleChange(task.id, titleDraft);
 		}
 	}
+
+	function focusOnMount(el: HTMLInputElement) {
+		el.focus();
+		el.select();
+	}
 </script>
 
 <g
@@ -1329,6 +1334,7 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: replace the `<text>` el
 			<input
 				class="title-input"
 				value={titleDraft}
+				use:focusOnMount
 				oninput={(e) => (titleDraft = (e.target as HTMLInputElement).value)}
 				onblur={commitTitle}
 				onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
@@ -1560,6 +1566,7 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add a `hovering` state,
 			<input
 				class="title-input"
 				value={titleDraft}
+				use:focusOnMount
 				oninput={(e) => (titleDraft = (e.target as HTMLInputElement).value)}
 				onblur={commitTitle}
 				onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
