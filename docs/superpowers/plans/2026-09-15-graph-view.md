@@ -1579,8 +1579,8 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add a `hovering` state,
 	{/if}
 	{#if hovering}
 		<g class="add-successor-button" onclick={() => onCreateSuccessor(task.id)}>
-			<circle cx={task.x + NODE_SIZE / 2} cy={task.y - 14} r="10" />
-			<text x={task.x + NODE_SIZE / 2} y={task.y - 14} text-anchor="middle" dominant-baseline="middle">+</text>
+			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
+			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
 		</g>
 	{/if}
 </g>
@@ -1838,8 +1838,8 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add `onConnectorDragSta
 	<!-- ...title/foreignObject/text unchanged... -->
 	{#if hovering}
 		<g class="add-successor-button" onclick={() => onCreateSuccessor(task.id)}>
-			<circle cx={task.x + NODE_SIZE / 2} cy={task.y - 14} r="10" />
-			<text x={task.x + NODE_SIZE / 2} y={task.y - 14} text-anchor="middle" dominant-baseline="middle">+</text>
+			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
+			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
 		</g>
 		<circle
 			class="connector-handle"
