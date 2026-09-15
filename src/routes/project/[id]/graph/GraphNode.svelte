@@ -7,20 +7,25 @@
 		task,
 		viewport,
 		canvasRect,
-		onDragEnd
+		onDragEnd,
+		onTitleChange
 	}: {
 		task: PageData['tasks'][number];
 		viewport: Viewport;
 		canvasRect: Rect;
 		onDragEnd: (taskId: number, offsetX: number, offsetY: number) => void;
+		onTitleChange: (taskId: number, title: string) => void;
 	} = $props();
 
 	let dragging = $state(false);
 	let dragStartSvg = { x: 0, y: 0 };
 	let dragStartTask = { x: 0, y: 0 };
 	let moved = 0;
+	let editingTitle = $state(false);
+	let titleDraft = $state(task.title);
 
 	function handlePointerDown(e: PointerEvent) {
+		if (editingTitle) return;
 		dragging = true;
 		moved = 0;
 		dragStartSvg = screenToSvg({ x: e.clientX, y: e.clientY }, canvasRect, viewport);
@@ -44,6 +49,19 @@
 		if (moved < 4) return;
 		onDragEnd(task.id, task.x, task.y);
 	}
+
+	function startEditingTitle() {
+		titleDraft = task.title;
+		editingTitle = true;
+	}
+
+	function commitTitle() {
+		editingTitle = false;
+		if (titleDraft.trim() !== '' && titleDraft !== task.title) {
+			task.title = titleDraft;
+			onTitleChange(task.id, titleDraft);
+		}
+	}
 </script>
 
 <g
@@ -51,6 +69,7 @@
 	onpointerdown={handlePointerDown}
 	onpointermove={handlePointerMove}
 	onpointerup={handlePointerUp}
+	ondblclick={startEditingTitle}
 >
 	<rect
 		x={task.x}
@@ -61,9 +80,21 @@
 		class:critical={task.schedule.onCriticalPath}
 		data-status={task.status}
 	/>
-	<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
-		{task.title}
-	</text>
+	{#if editingTitle}
+		<foreignObject x={task.x + 4} y={task.y + NODE_SIZE / 2 - 10} width={NODE_SIZE - 8} height="20">
+			<input
+				class="title-input"
+				value={titleDraft}
+				oninput={(e) => (titleDraft = (e.target as HTMLInputElement).value)}
+				onblur={commitTitle}
+				onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+			/>
+		</foreignObject>
+	{:else}
+		<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
+			{task.title}
+		</text>
+	{/if}
 </g>
 
 <style>
@@ -87,5 +118,11 @@
 		font-size: 12px;
 		pointer-events: none;
 		user-select: none;
+	}
+	.title-input {
+		width: 100%;
+		height: 100%;
+		font-size: 12px;
+		box-sizing: border-box;
 	}
 </style>

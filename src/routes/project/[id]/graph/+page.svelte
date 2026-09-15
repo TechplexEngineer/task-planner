@@ -65,6 +65,14 @@
 			})
 		});
 	}
+
+	async function handleTitleChange(taskId: number, title: string) {
+		await fetch(resolve('/project/[id]/graph', { id: String(data.project.id) }), {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ type: 'fields', taskId, patch: { title } })
+		});
+	}
 </script>
 
 <h2>Graph</h2>
@@ -93,7 +101,13 @@
 	{/each}
 	{#if svgEl}
 		{#each tasks as task (task.id)}
-			<GraphNode {task} {viewport} canvasRect={svgEl.getBoundingClientRect()} onDragEnd={handleDragEnd} />
+			<GraphNode
+				{task}
+				{viewport}
+				canvasRect={svgEl.getBoundingClientRect()}
+				onDragEnd={handleDragEnd}
+				onTitleChange={handleTitleChange}
+			/>
 		{/each}
 	{/if}
 </svg>
