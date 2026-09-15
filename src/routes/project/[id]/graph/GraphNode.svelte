@@ -8,13 +8,15 @@
 		viewport,
 		canvasRect,
 		onDragEnd,
-		onTitleChange
+		onTitleChange,
+		onCreateSuccessor
 	}: {
 		task: PageData['tasks'][number];
 		viewport: Viewport;
 		canvasRect: Rect;
 		onDragEnd: (taskId: number, offsetX: number, offsetY: number) => void;
 		onTitleChange: (taskId: number, title: string) => void;
+		onCreateSuccessor: (predecessorId: number) => void;
 	} = $props();
 
 	let dragging = $state(false);
@@ -23,6 +25,7 @@
 	let moved = 0;
 	let editingTitle = $state(false);
 	let titleDraft = $state(task.title);
+	let hovering = $state(false);
 
 	function handlePointerDown(e: PointerEvent) {
 		if (editingTitle) return;
@@ -75,6 +78,8 @@
 	onpointermove={handlePointerMove}
 	onpointerup={handlePointerUp}
 	ondblclick={startEditingTitle}
+	onpointerenter={() => (hovering = true)}
+	onpointerleave={() => (hovering = false)}
 >
 	<rect
 		x={task.x}
@@ -100,6 +105,16 @@
 		<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
 			{task.title}
 		</text>
+	{/if}
+	{#if hovering}
+		<g
+			class="add-successor-button"
+			onpointerdown={(e) => e.stopPropagation()}
+			onclick={() => onCreateSuccessor(task.id)}
+		>
+			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
+			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
+		</g>
 	{/if}
 </g>
 
@@ -130,5 +145,16 @@
 		height: 100%;
 		font-size: 12px;
 		box-sizing: border-box;
+	}
+	.add-successor-button {
+		cursor: pointer;
+	}
+	.add-successor-button circle {
+		fill: #333;
+	}
+	.add-successor-button text {
+		fill: white;
+		pointer-events: none;
+		font-size: 14px;
 	}
 </style>

@@ -4,6 +4,7 @@
 	import { NODE_SIZE, computeBasePositions } from '$lib/graph-layout';
 	import { DEFAULT_VIEWPORT, panViewport, zoomViewportAtPoint, type Viewport } from '$lib/graph-viewport';
 	import { resolve } from '$app/paths';
+	import { enhance } from '$app/forms';
 
 	let { data }: { data: PageData } = $props();
 
@@ -73,6 +74,14 @@
 			body: JSON.stringify({ type: 'fields', taskId, patch: { title } })
 		});
 	}
+
+	let createSuccessorForm: HTMLFormElement;
+	let predecessorIdInput: HTMLInputElement;
+
+	function handleCreateSuccessor(predecessorId: number) {
+		predecessorIdInput.value = String(predecessorId);
+		createSuccessorForm.requestSubmit();
+	}
 </script>
 
 <h2>Graph</h2>
@@ -107,10 +116,21 @@
 				canvasRect={svgEl.getBoundingClientRect()}
 				onDragEnd={handleDragEnd}
 				onTitleChange={handleTitleChange}
+				onCreateSuccessor={handleCreateSuccessor}
 			/>
 		{/each}
 	{/if}
 </svg>
+
+<form
+	bind:this={createSuccessorForm}
+	method="POST"
+	action="?/createSuccessor"
+	use:enhance
+	style="display: none"
+>
+	<input bind:this={predecessorIdInput} type="hidden" name="predecessorId" value="" />
+</form>
 
 <style>
 	.graph-canvas {
