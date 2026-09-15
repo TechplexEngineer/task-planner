@@ -62,6 +62,11 @@
 			onTitleChange(task.id, titleDraft);
 		}
 	}
+
+	function focusOnMount(el: HTMLInputElement) {
+		el.focus();
+		el.select();
+	}
 </script>
 
 <g
@@ -85,6 +90,7 @@
 			<input
 				class="title-input"
 				value={titleDraft}
+				use:focusOnMount
 				oninput={(e) => (titleDraft = (e.target as HTMLInputElement).value)}
 				onblur={commitTitle}
 				onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
