@@ -344,9 +344,19 @@ describe('zoomViewportAtPoint', () => {
 	});
 
 	it('clamps scale to MIN_SCALE/MAX_SCALE', () => {
-		const tinyZoom = zoomViewportAtPoint({ x: 0, y: 0, scale: MIN_SCALE }, { x: 0, y: 0 }, rect, 0.1);
+		const tinyZoom = zoomViewportAtPoint(
+			{ x: 0, y: 0, scale: MIN_SCALE },
+			{ x: 0, y: 0 },
+			rect,
+			0.1
+		);
 		expect(tinyZoom.scale).toBe(MIN_SCALE);
-		const hugeZoom = zoomViewportAtPoint({ x: 0, y: 0, scale: MAX_SCALE }, { x: 0, y: 0 }, rect, 10);
+		const hugeZoom = zoomViewportAtPoint(
+			{ x: 0, y: 0, scale: MAX_SCALE },
+			{ x: 0, y: 0 },
+			rect,
+			10
+		);
 		expect(hugeZoom.scale).toBe(MAX_SCALE);
 	});
 });
@@ -538,7 +548,12 @@ Create `src/routes/project/[id]/graph/GraphNode.svelte`:
 		class:critical={task.schedule.onCriticalPath}
 		data-status={task.status}
 	/>
-	<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
+	<text
+		x={task.x + NODE_SIZE / 2}
+		y={task.y + NODE_SIZE / 2}
+		text-anchor="middle"
+		dominant-baseline="middle"
+	>
 		{task.title}
 	</text>
 </g>
@@ -687,7 +702,12 @@ Modify `src/routes/project/[id]/graph/+page.svelte` script block:
 	import type { PageData } from './$types';
 	import GraphNode from './GraphNode.svelte';
 	import { NODE_SIZE } from '$lib/graph-layout';
-	import { DEFAULT_VIEWPORT, panViewport, zoomViewportAtPoint, type Viewport } from '$lib/graph-viewport';
+	import {
+		DEFAULT_VIEWPORT,
+		panViewport,
+		zoomViewportAtPoint,
+		type Viewport
+	} from '$lib/graph-viewport';
 
 	let { data }: { data: PageData } = $props();
 
@@ -735,7 +755,7 @@ Modify `src/routes/project/[id]/graph/+page.svelte` script block:
 <svg
 	bind:this={svgEl}
 	class="graph-canvas"
-	viewBox={viewBox}
+	{viewBox}
 	onwheel={handleWheel}
 	onpointerdown={handleBackgroundPointerDown}
 	onpointermove={handleBackgroundPointerMove}
@@ -920,9 +940,9 @@ test('PATCH endpoint updates position and fields', async ({ page, request }) => 
 	expect(fieldsResponse.ok()).toBe(true);
 	const fieldsBody = await fieldsResponse.json();
 	expect(fieldsBody.ok).toBe(true);
-	expect(fieldsBody.tasks.find((t: { id: number }) => t.id === taskId).schedule.earliestFinish).toBe(
-		5
-	);
+	expect(
+		fieldsBody.tasks.find((t: { id: number }) => t.id === taskId).schedule.earliestFinish
+	).toBe(5);
 });
 ```
 
@@ -1021,7 +1041,12 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`:
 		class:critical={task.schedule.onCriticalPath}
 		data-status={task.status}
 	/>
-	<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
+	<text
+		x={task.x + NODE_SIZE / 2}
+		y={task.y + NODE_SIZE / 2}
+		text-anchor="middle"
+		dominant-baseline="middle"
+	>
 		{task.title}
 	</text>
 </g>
@@ -1062,7 +1087,12 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a `basePositionOf` look
 	import type { PageData } from './$types';
 	import GraphNode from './GraphNode.svelte';
 	import { NODE_SIZE, computeBasePositions } from '$lib/graph-layout';
-	import { DEFAULT_VIEWPORT, panViewport, zoomViewportAtPoint, type Viewport } from '$lib/graph-viewport';
+	import {
+		DEFAULT_VIEWPORT,
+		panViewport,
+		zoomViewportAtPoint,
+		type Viewport
+	} from '$lib/graph-viewport';
 	import { resolve } from '$app/paths';
 
 	let { data }: { data: PageData } = $props();
@@ -1132,7 +1162,7 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a `basePositionOf` look
 <svg
 	bind:this={svgEl}
 	class="graph-canvas"
-	viewBox={viewBox}
+	{viewBox}
 	onwheel={handleWheel}
 	onpointerdown={handleBackgroundPointerDown}
 	onpointermove={handleBackgroundPointerMove}
@@ -1153,7 +1183,12 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a `basePositionOf` look
 	{/each}
 	{#if svgEl}
 		{#each tasks as task (task.id)}
-			<GraphNode {task} {viewport} canvasRect={svgEl.getBoundingClientRect()} onDragEnd={handleDragEnd} />
+			<GraphNode
+				{task}
+				{viewport}
+				canvasRect={svgEl.getBoundingClientRect()}
+				onDragEnd={handleDragEnd}
+			/>
 		{/each}
 	{/if}
 </svg>
@@ -1341,7 +1376,12 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: replace the `<text>` el
 			/>
 		</foreignObject>
 	{:else}
-		<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
+		<text
+			x={task.x + NODE_SIZE / 2}
+			y={task.y + NODE_SIZE / 2}
+			text-anchor="middle"
+			dominant-baseline="middle"
+		>
 			{task.title}
 		</text>
 	{/if}
@@ -1395,13 +1435,13 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add `handleTitleChange` and
 And in the template:
 
 ```svelte
-			<GraphNode
-				{task}
-				{viewport}
-				canvasRect={svgEl.getBoundingClientRect()}
-				onDragEnd={handleDragEnd}
-				onTitleChange={handleTitleChange}
-			/>
+<GraphNode
+	{task}
+	{viewport}
+	canvasRect={svgEl.getBoundingClientRect()}
+	onDragEnd={handleDragEnd}
+	onTitleChange={handleTitleChange}
+/>
 ```
 
 - [ ] **Step 3: Write the e2e test**
@@ -1431,7 +1471,9 @@ test('editing a title inline persists across reload', async ({ page }) => {
 	await page.waitForTimeout(200);
 	await page.reload();
 
-	await expect(page.locator('g[data-task-id] text').filter({ hasText: 'Renamed title' })).toBeVisible();
+	await expect(
+		page.locator('g[data-task-id] text').filter({ hasText: 'Renamed title' })
+	).toBeVisible();
 });
 ```
 
@@ -1573,14 +1615,24 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add a `hovering` state,
 			/>
 		</foreignObject>
 	{:else}
-		<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
+		<text
+			x={task.x + NODE_SIZE / 2}
+			y={task.y + NODE_SIZE / 2}
+			text-anchor="middle"
+			dominant-baseline="middle"
+		>
 			{task.title}
 		</text>
 	{/if}
 	{#if hovering}
 		<g class="add-successor-button" onclick={() => onCreateSuccessor(task.id)}>
 			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
-			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
+			<text
+				x={task.x + NODE_SIZE / 2}
+				y={task.y + NODE_SIZE + 14}
+				text-anchor="middle"
+				dominant-baseline="middle">+</text
+			>
 		</g>
 	{/if}
 </g>
@@ -1737,7 +1789,11 @@ async function currentLayers(db: Db, projectId: number) {
 	);
 }
 
-async function resetOffsetsForChangedLayers(db: Db, projectId: number, before: Map<number, number>) {
+async function resetOffsetsForChangedLayers(
+	db: Db,
+	projectId: number,
+	before: Map<number, number>
+) {
 	const after = await currentLayers(db, projectId);
 	for (const taskId of taskIdsWithChangedLayer(before, after)) {
 		await resetPosition(db, taskId);
@@ -1839,7 +1895,12 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add `onConnectorDragSta
 	{#if hovering}
 		<g class="add-successor-button" onclick={() => onCreateSuccessor(task.id)}>
 			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
-			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
+			<text
+				x={task.x + NODE_SIZE / 2}
+				y={task.y + NODE_SIZE + 14}
+				text-anchor="middle"
+				dominant-baseline="middle">+</text
+			>
 		</g>
 		<circle
 			class="connector-handle"
@@ -2078,7 +2139,11 @@ Modify `src/routes/project/[id]/graph/+page.server.ts`, adding to `actions`:
 Add the corresponding imports at the top, aliasing to avoid clashing with the local action names:
 
 ```ts
-import { createTask, listTasksForProject, deleteTask as deleteTaskRow } from '$lib/server/repositories/tasks';
+import {
+	createTask,
+	listTasksForProject,
+	deleteTask as deleteTaskRow
+} from '$lib/server/repositories/tasks';
 import {
 	createDependency as createDependencyEdge,
 	deleteDependency as deleteDependencyRow,
@@ -2092,22 +2157,23 @@ import {
 Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add an `onDelete` prop and a small "×" button near the top-right corner of the node, visible when `hovering`.
 
 ```svelte
-	// add to props:
-	onDelete: (taskId: number) => void;
+// add to props: onDelete: (taskId: number) => void;
 ```
 
 ```svelte
-	{#if hovering}
-		<!-- ...existing add-successor-button and connector-handle... -->
-		<g
-			class="delete-button"
-			onpointerdown={(e) => e.stopPropagation()}
-			onclick={() => onDelete(task.id)}
+{#if hovering}
+	<!-- ...existing add-successor-button and connector-handle... -->
+	<g
+		class="delete-button"
+		onpointerdown={(e) => e.stopPropagation()}
+		onclick={() => onDelete(task.id)}
+	>
+		<circle cx={task.x + NODE_SIZE - 8} cy={task.y + 8} r="8" />
+		<text x={task.x + NODE_SIZE - 8} y={task.y + 8} text-anchor="middle" dominant-baseline="middle"
+			>×</text
 		>
-			<circle cx={task.x + NODE_SIZE - 8} cy={task.y + 8} r="8" />
-			<text x={task.x + NODE_SIZE - 8} y={task.y + 8} text-anchor="middle" dominant-baseline="middle">×</text>
-		</g>
-	{/if}
+	</g>
+{/if}
 ```
 
 Note: `onpointerdown` must call `stopPropagation()` here for the same reason the add-successor-button (Task 9) and connector-handle (Task 10) do — the outer `<g>`'s `setPointerCapture` (used for node-reposition drag) otherwise retargets the subsequent `click` event away from this nested button, so it silently never fires.
@@ -2137,27 +2203,27 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a hidden `deleteTask` f
 ```
 
 ```svelte
-	{#each data.dependencies as dep (dep.id)}
-		{@const from = tasks.find((t) => t.id === dep.predecessorId)}
-		{@const to = tasks.find((t) => t.id === dep.successorId)}
-		{#if from && to}
-			<line
-				class="edge"
-				x1={from.x + NODE_SIZE}
-				y1={from.y + NODE_SIZE / 2}
-				x2={to.x}
-				y2={to.y + NODE_SIZE / 2}
-			/>
-			<line
-				class="edge-hit-area"
-				x1={from.x + NODE_SIZE}
-				y1={from.y + NODE_SIZE / 2}
-				x2={to.x}
-				y2={to.y + NODE_SIZE / 2}
-				onclick={() => handleDeleteDependency(dep.id)}
-			/>
-		{/if}
-	{/each}
+{#each data.dependencies as dep (dep.id)}
+	{@const from = tasks.find((t) => t.id === dep.predecessorId)}
+	{@const to = tasks.find((t) => t.id === dep.successorId)}
+	{#if from && to}
+		<line
+			class="edge"
+			x1={from.x + NODE_SIZE}
+			y1={from.y + NODE_SIZE / 2}
+			x2={to.x}
+			y2={to.y + NODE_SIZE / 2}
+		/>
+		<line
+			class="edge-hit-area"
+			x1={from.x + NODE_SIZE}
+			y1={from.y + NODE_SIZE / 2}
+			x2={to.x}
+			y2={to.y + NODE_SIZE / 2}
+			onclick={() => handleDeleteDependency(dep.id)}
+		/>
+	{/if}
+{/each}
 ```
 
 ```svelte
@@ -2253,8 +2319,7 @@ git commit -m "feat: add task and dependency deletion from the graph view"
 Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add the `onOpenDetails` prop and call it from `handlePointerUp` when the pointer didn't move enough to count as a drag.
 
 ```svelte
-	// add to props:
-	onOpenDetails: (taskId: number) => void;
+// add to props: onOpenDetails: (taskId: number) => void;
 ```
 
 ```svelte
@@ -2337,7 +2402,12 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: track `selectedTaskId`, com
 		{#if selectedTask.type === 'task'}
 			<label>
 				Duration (days)
-				<input type="number" min="0" value={selectedTask.durationDays} onchange={handleDurationChange} />
+				<input
+					type="number"
+					min="0"
+					value={selectedTask.durationDays}
+					onchange={handleDurationChange}
+				/>
 			</label>
 		{/if}
 		<label>

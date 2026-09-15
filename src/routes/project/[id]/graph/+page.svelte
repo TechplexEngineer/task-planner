@@ -20,6 +20,16 @@
 	let panning = $state(false);
 	let lastPointer = { x: 0, y: 0 };
 
+	// Not a writable $derived: task fields (x/y while dragging, title, description,
+	// durationDays, status, schedule) are mutated in place all over this file and in
+	// GraphNode.svelte for immediate visual feedback (WYSIWYG editing) before/without
+	// a round-trip to the server. $derived only tracks its own recomputation, not
+	// mutations to properties of the object it returns, so switching this to a
+	// writable $derived (as the lint rule suggests) silently breaks those in-place
+	// updates - e.g. the critical-path highlight no longer refreshes after editing a
+	// task's duration in the details popover. $state's deep reactivity is required;
+	// the $effect below only resyncs from the server on navigation/reload.
+	// eslint-disable-next-line svelte/prefer-writable-derived
 	let tasks = $state(data.tasks.map((t) => ({ ...t })));
 	$effect(() => {
 		tasks = data.tasks.map((t) => ({ ...t }));

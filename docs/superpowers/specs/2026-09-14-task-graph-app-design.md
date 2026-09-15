@@ -92,7 +92,7 @@ computation happens once per load, not per view.
   the column _is_ the parallelism signal. Within a column, order by
   `priority_rank` as a simple, sufficient crossing-reduction heuristic. Base
   pixel position per task = `(layer * COLUMN_WIDTH, indexWithinLayer *
-  ROW_HEIGHT)`; rendered position = base + the task's `(offset_x, offset_y)`
+ROW_HEIGHT)`; rendered position = base + the task's `(offset_x, offset_y)`
   from `task_positions`.
 - **Manual override**: dragging a node writes an `(offset_x, offset_y)` to
   `task_positions` on drop. Re-layout (triggered on structural change —
