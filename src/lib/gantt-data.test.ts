@@ -12,8 +12,12 @@ describe('toGanttTasks', () => {
 			}
 		];
 		const [ganttTask] = toGanttTasks('2026-01-01', tasks);
-		expect(ganttTask.start.toISOString().slice(0, 10)).toBe('2026-01-03');
-		expect(ganttTask.end.toISOString().slice(0, 10)).toBe('2026-01-06');
+		expect(ganttTask.start.getFullYear()).toBe(2026);
+		expect(ganttTask.start.getMonth()).toBe(0); // January is 0
+		expect(ganttTask.start.getDate()).toBe(3);
+		expect(ganttTask.end.getFullYear()).toBe(2026);
+		expect(ganttTask.end.getMonth()).toBe(0);
+		expect(ganttTask.end.getDate()).toBe(6);
 	});
 
 	it('gives a milestone a zero-length span when earliest start equals earliest finish', () => {
@@ -26,6 +30,9 @@ describe('toGanttTasks', () => {
 			}
 		];
 		const [ganttTask] = toGanttTasks('2026-01-01', tasks);
+		expect(ganttTask.start.getFullYear()).toBe(2026);
+		expect(ganttTask.start.getMonth()).toBe(0);
+		expect(ganttTask.start.getDate()).toBe(4);
 		expect(ganttTask.start.getTime()).toBe(ganttTask.end.getTime());
 	});
 
@@ -62,6 +69,27 @@ describe('toGanttTasks', () => {
 		expect(ganttTask.id).toBe(42);
 		expect(ganttTask.text).toBe('Spread peanut butter');
 		expect(ganttTask.type).toBe('task');
+	});
+
+	it('produces the same calendar date regardless of the process timezone', () => {
+		const originalTz = process.env.TZ;
+		process.env.TZ = 'America/New_York';
+		try {
+			const tasks = [
+				{
+					id: 1,
+					title: 'Buy bread',
+					type: 'task' as const,
+					schedule: { earliestStart: 0, earliestFinish: 1, onCriticalPath: false }
+				}
+			];
+			const [ganttTask] = toGanttTasks('2026-01-01', tasks);
+			expect(ganttTask.start.getFullYear()).toBe(2026);
+			expect(ganttTask.start.getMonth()).toBe(0);
+			expect(ganttTask.start.getDate()).toBe(1);
+		} finally {
+			process.env.TZ = originalTz;
+		}
 	});
 });
 

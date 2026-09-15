@@ -32,15 +32,11 @@ interface DependencyEdgeInput {
 }
 
 function addDays(isoDate: string, days: number): Date {
-	const date = new Date(`${isoDate}T00:00:00Z`);
-	date.setUTCDate(date.getUTCDate() + days);
-	return date;
+	const [year, month, day] = isoDate.split('-').map(Number);
+	return new Date(year, month - 1, day + days);
 }
 
-export function toGanttTasks(
-	projectStartDate: string,
-	tasks: ScheduledTaskInput[]
-): GanttTask[] {
+export function toGanttTasks(projectStartDate: string, tasks: ScheduledTaskInput[]): GanttTask[] {
 	return tasks.map((task) => ({
 		id: task.id,
 		text: task.title,
