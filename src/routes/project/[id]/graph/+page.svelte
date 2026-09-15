@@ -201,7 +201,6 @@
 	bind:this={svgEl}
 	class="graph-canvas"
 	{viewBox}
-	preserveAspectRatio="none"
 	onwheel={handleWheel}
 	onpointerdown={handleBackgroundPointerDown}
 	onpointermove={handleBackgroundPointerMove}
@@ -334,7 +333,7 @@
 <style>
 	.graph-canvas {
 		width: 100%;
-		height: 80vh;
+		aspect-ratio: 3 / 2;
 		border: 1px solid #ccc;
 		touch-action: none;
 	}
