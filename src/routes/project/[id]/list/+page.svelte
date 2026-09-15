@@ -54,13 +54,13 @@
 
 <h3>Add task</h3>
 <form method="POST" action="?/createTask" use:enhance>
-	<input type="text" name="title" placeholder="Title" required />
-	<textarea name="description" placeholder="Description"></textarea>
-	<select name="type">
+	<input type="text" name="title" placeholder="Title" required class="form-control" />
+	<textarea name="description" placeholder="Description" class="form-control"></textarea>
+	<select name="type" class="form-select">
 		<option value="task">Task</option>
 		<option value="milestone">Milestone</option>
 	</select>
-	<input type="number" name="durationDays" min="0" value="1" />
+	<input type="number" name="durationDays" min="0" value="1" class="form-control" />
 	<button type="submit">Add</button>
 </form>
 {#if form?.formName === 'createTask' && form.error}
@@ -69,13 +69,13 @@
 
 <h3>Add dependency</h3>
 <form method="POST" action="?/createDependency" use:enhance>
-	<select name="predecessorId">
+	<select name="predecessorId" class="form-select">
 		{#each data.tasks as task (task.id)}
 			<option value={task.id}>{task.title}</option>
 		{/each}
 	</select>
 	<span>must finish before</span>
-	<select name="successorId">
+	<select name="successorId" class="form-select">
 		{#each data.tasks as task (task.id)}
 			<option value={task.id}>{task.title}</option>
 		{/each}
