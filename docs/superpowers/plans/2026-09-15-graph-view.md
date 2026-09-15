@@ -1071,7 +1071,7 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a `basePositionOf` look
 	const VIEW_HEIGHT = 600;
 
 	let viewport = $state<Viewport>(DEFAULT_VIEWPORT);
-	let svgEl: SVGSVGElement;
+	let svgEl: SVGSVGElement | undefined = $state();
 	let panning = $state(false);
 	let lastPointer = { x: 0, y: 0 };
 
@@ -1088,7 +1088,7 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a `basePositionOf` look
 
 	function handleWheel(e: WheelEvent) {
 		e.preventDefault();
-		const rect = svgEl.getBoundingClientRect();
+		const rect = svgEl!.getBoundingClientRect();
 		const zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
 		viewport = zoomViewportAtPoint(viewport, { x: e.clientX, y: e.clientY }, rect, zoomFactor);
 	}
@@ -1097,7 +1097,7 @@ Modify `src/routes/project/[id]/graph/+page.svelte`: add a `basePositionOf` look
 		if (e.target !== svgEl) return;
 		panning = true;
 		lastPointer = { x: e.clientX, y: e.clientY };
-		svgEl.setPointerCapture(e.pointerId);
+		svgEl!.setPointerCapture(e.pointerId);
 	}
 
 	function handleBackgroundPointerMove(e: PointerEvent) {
