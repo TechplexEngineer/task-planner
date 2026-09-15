@@ -13,7 +13,8 @@
 		onConnectorDragStart,
 		onConnectorDrop,
 		connectorDragActive,
-		onDelete
+		onDelete,
+		onOpenDetails
 	}: {
 		task: PageData['tasks'][number];
 		viewport: Viewport;
@@ -25,6 +26,7 @@
 		onConnectorDrop: (successorId: number) => void;
 		connectorDragActive: boolean;
 		onDelete: (taskId: number) => void;
+		onOpenDetails: (taskId: number) => void;
 	} = $props();
 
 	let dragging = $state(false);
@@ -57,7 +59,10 @@
 	function handlePointerUp() {
 		if (!dragging) return;
 		dragging = false;
-		if (moved < 4) return;
+		if (moved < 4) {
+			onOpenDetails(task.id);
+			return;
+		}
 		onDragEnd(task.id, task.x, task.y);
 	}
 
@@ -114,7 +119,12 @@
 			/>
 		</foreignObject>
 	{:else}
-		<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE / 2} text-anchor="middle" dominant-baseline="middle">
+		<text
+			x={task.x + NODE_SIZE / 2}
+			y={task.y + NODE_SIZE / 2}
+			text-anchor="middle"
+			dominant-baseline="middle"
+		>
 			{task.title}
 		</text>
 	{/if}
@@ -125,7 +135,12 @@
 			onclick={() => onCreateSuccessor(task.id)}
 		>
 			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
-			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
+			<text
+				x={task.x + NODE_SIZE / 2}
+				y={task.y + NODE_SIZE + 14}
+				text-anchor="middle"
+				dominant-baseline="middle">+</text
+			>
 		</g>
 		<circle
 			class="connector-handle"
@@ -143,7 +158,12 @@
 			onclick={() => onDelete(task.id)}
 		>
 			<circle cx={task.x + NODE_SIZE - 8} cy={task.y + 8} r="8" />
-			<text x={task.x + NODE_SIZE - 8} y={task.y + 8} text-anchor="middle" dominant-baseline="middle">×</text>
+			<text
+				x={task.x + NODE_SIZE - 8}
+				y={task.y + 8}
+				text-anchor="middle"
+				dominant-baseline="middle">×</text
+			>
 		</g>
 	{/if}
 </g>

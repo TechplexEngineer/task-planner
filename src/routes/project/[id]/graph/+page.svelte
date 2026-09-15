@@ -6,6 +6,7 @@
 		DEFAULT_VIEWPORT,
 		panViewport,
 		screenToSvg,
+		svgToScreen,
 		zoomViewportAtPoint,
 		type Viewport
 	} from '$lib/graph-viewport';
@@ -81,6 +82,58 @@
 		});
 	}
 
+	let selectedTaskId = $state<number | null>(null);
+	let selectedTask = $derived(tasks.find((t) => t.id === selectedTaskId) ?? null);
+	let popoverPosition = $derived(
+		selectedTask && svgEl
+			? svgToScreen(
+					{ x: selectedTask.x + NODE_SIZE, y: selectedTask.y },
+					svgEl.getBoundingClientRect(),
+					viewport
+				)
+			: null
+	);
+
+	function handleOpenDetails(taskId: number) {
+		selectedTaskId = taskId;
+	}
+
+	async function patchFields(taskId: number, patch: Record<string, unknown>) {
+		const response = await fetch(resolve('/project/[id]/graph', { id: String(data.project.id) }), {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ type: 'fields', taskId, patch })
+		});
+		const body = (await response.json()) as {
+			tasks: { id: number; schedule: PageData['tasks'][number]['schedule'] }[];
+		};
+		for (const entry of body.tasks) {
+			const t = tasks.find((task) => task.id === entry.id);
+			if (t) t.schedule = entry.schedule;
+		}
+	}
+
+	function handleDescriptionChange(e: Event) {
+		if (!selectedTask) return;
+		const description = (e.target as HTMLTextAreaElement).value;
+		selectedTask.description = description;
+		patchFields(selectedTask.id, { description });
+	}
+
+	function handleDurationChange(e: Event) {
+		if (!selectedTask) return;
+		const durationDays = Number((e.target as HTMLInputElement).value);
+		selectedTask.durationDays = durationDays;
+		patchFields(selectedTask.id, { durationDays });
+	}
+
+	function handleStatusChange(e: Event) {
+		if (!selectedTask) return;
+		const status = (e.target as HTMLSelectElement).value as 'todo' | 'in_progress' | 'done';
+		selectedTask.status = status;
+		patchFields(selectedTask.id, { status });
+	}
+
 	let createSuccessorForm: HTMLFormElement;
 	let predecessorIdInput: HTMLInputElement;
 
@@ -147,7 +200,8 @@
 <svg
 	bind:this={svgEl}
 	class="graph-canvas"
-	viewBox={viewBox}
+	{viewBox}
+	preserveAspectRatio="none"
 	onwheel={handleWheel}
 	onpointerdown={handleBackgroundPointerDown}
 	onpointermove={handleBackgroundPointerMove}
@@ -199,10 +253,40 @@
 				onConnectorDrop={handleConnectorDrop}
 				connectorDragActive={connectorFrom !== null && connectorFrom !== task.id}
 				onDelete={handleDeleteTask}
+				onOpenDetails={handleOpenDetails}
 			/>
 		{/each}
 	{/if}
 </svg>
+
+{#if selectedTask && popoverPosition}
+	<div class="details-popover" style={`left: ${popoverPosition.x}px; top: ${popoverPosition.y}px;`}>
+		<button onclick={() => (selectedTaskId = null)}>Close</button>
+		<label>
+			Description
+			<textarea value={selectedTask.description} onchange={handleDescriptionChange}></textarea>
+		</label>
+		{#if selectedTask.type === 'task'}
+			<label>
+				Duration (days)
+				<input
+					type="number"
+					min="0"
+					value={selectedTask.durationDays}
+					onchange={handleDurationChange}
+				/>
+			</label>
+		{/if}
+		<label>
+			Status
+			<select value={selectedTask.status} onchange={handleStatusChange}>
+				<option value="todo">To do</option>
+				<option value="in_progress">In progress</option>
+				<option value="done">Done</option>
+			</select>
+		</label>
+	</div>
+{/if}
 
 <form
 	bind:this={createSuccessorForm}
@@ -267,5 +351,15 @@
 		stroke: transparent;
 		stroke-width: 14;
 		cursor: pointer;
+	}
+	.details-popover {
+		position: fixed;
+		background: white;
+		border: 1px solid #ccc;
+		padding: 0.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		z-index: 10;
 	}
 </style>
