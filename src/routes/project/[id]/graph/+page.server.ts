@@ -1,18 +1,15 @@
 import { fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db/client';
-import type { Db } from '$lib/server/db/client';
-import { listPositionsForTasks, resetPosition } from '$lib/server/repositories/positions';
+import { listPositionsForTasks } from '$lib/server/repositories/positions';
 import { computeBasePositions } from '$lib/graph-layout';
-import { createTask, listTasksForProject, deleteTask as deleteTaskRow } from '$lib/server/repositories/tasks';
+import { createTask, deleteTask as deleteTaskRow } from '$lib/server/repositories/tasks';
 import {
 	createDependency as createDependencyEdge,
 	deleteDependency as deleteDependencyRow,
-	listDependenciesForProject,
 	CycleError
 } from '$lib/server/repositories/dependencies';
-import { computeLayers } from '$lib/server/scheduling/layout';
-import { taskIdsWithChangedLayer } from '$lib/server/scheduling/offset-reset';
+import { currentLayers, resetOffsetsForChangedLayers } from '$lib/server/scheduling/offset-reset';
 
 export const load: PageServerLoad = async ({ parent, platform }) => {
 	const { project, tasks, dependencies } = await parent();
@@ -35,26 +32,6 @@ export const load: PageServerLoad = async ({ parent, platform }) => {
 
 	return { project, tasks: graphTasks, dependencies };
 };
-
-async function currentLayers(db: Db, projectId: number) {
-	const tasks = await listTasksForProject(db, projectId);
-	const dependencies = await listDependenciesForProject(db, projectId);
-	return computeLayers(
-		tasks.map((t) => t.id),
-		dependencies.map((d) => ({ predecessorId: d.predecessorId, successorId: d.successorId }))
-	);
-}
-
-async function resetOffsetsForChangedLayers(
-	db: Db,
-	projectId: number,
-	before: Map<number, number>
-) {
-	const after = await currentLayers(db, projectId);
-	for (const taskId of taskIdsWithChangedLayer(before, after)) {
-		await resetPosition(db, taskId);
-	}
-}
 
 export const actions: Actions = {
 	createSuccessor: async ({ request, params, platform }) => {
