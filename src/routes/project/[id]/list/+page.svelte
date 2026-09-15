@@ -53,34 +53,62 @@
 </form>
 
 <h3>Add task</h3>
-<form method="POST" action="?/createTask" use:enhance>
-	<input type="text" name="title" placeholder="Title" required class="form-control" />
-	<textarea name="description" placeholder="Description" class="form-control"></textarea>
-	<select name="type" class="form-select">
-		<option value="task">Task</option>
-		<option value="milestone">Milestone</option>
-	</select>
-	<input type="number" name="durationDays" min="0" value="1" class="form-control" />
-	<button type="submit">Add</button>
+<form
+	method="POST"
+	action="?/createTask"
+	use:enhance
+	class="row row-cols-lg-auto g-2 align-items-center mb-3"
+>
+	<div class="col-12">
+		<input type="text" name="title" placeholder="Title" required class="form-control" />
+	</div>
+	<div class="col-12">
+		<textarea name="description" placeholder="Description" class="form-control" rows="1"></textarea>
+	</div>
+	<div class="col-12">
+		<select name="type" class="form-select">
+			<option value="task">Task</option>
+			<option value="milestone">Milestone</option>
+		</select>
+	</div>
+	<div class="col-12">
+		<input type="number" name="durationDays" min="0" value="1" class="form-control" />
+	</div>
+	<div class="col-12">
+		<button type="submit" class="btn btn-primary">Add</button>
+	</div>
 </form>
 {#if form?.formName === 'createTask' && form.error}
 	<p class="error">{form.error}</p>
 {/if}
 
 <h3>Add dependency</h3>
-<form method="POST" action="?/createDependency" use:enhance>
-	<select name="predecessorId" class="form-select">
-		{#each data.tasks as task (task.id)}
-			<option value={task.id}>{task.title}</option>
-		{/each}
-	</select>
-	<span>must finish before</span>
-	<select name="successorId" class="form-select">
-		{#each data.tasks as task (task.id)}
-			<option value={task.id}>{task.title}</option>
-		{/each}
-	</select>
-	<button type="submit">Add dependency</button>
+<form
+	method="POST"
+	action="?/createDependency"
+	use:enhance
+	class="row row-cols-lg-auto g-2 align-items-center mb-3"
+>
+	<div class="col-12">
+		<select name="predecessorId" class="form-select">
+			{#each data.tasks as task (task.id)}
+				<option value={task.id}>{task.title}</option>
+			{/each}
+		</select>
+	</div>
+	<div class="col-12">
+		<span class="col-form-label">must finish before</span>
+	</div>
+	<div class="col-12">
+		<select name="successorId" class="form-select">
+			{#each data.tasks as task (task.id)}
+				<option value={task.id}>{task.title}</option>
+			{/each}
+		</select>
+	</div>
+	<div class="col-12">
+		<button type="submit" class="btn btn-primary">Add dependency</button>
+	</div>
 </form>
 {#if form?.formName === 'createDependency' && form.error}
 	<p class="error">{form.error}</p>
