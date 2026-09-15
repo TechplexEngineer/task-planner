@@ -167,7 +167,19 @@ computation happens once per load, not per view.
 
 ## Open items for implementation time
 
-- Exact Gantt timeline component and list drag-and-drop library — chosen and
-  vetted for Svelte 5 compatibility during implementation.
 - Exact crossing-reduction heuristic within a graph-view column, if
   `priority_rank` ordering proves visually insufficient in practice.
+
+## Resolved implementation decisions
+
+- **List drag-and-drop**: `svelte-dnd-action` (in use since the List view).
+- **Gantt timeline component**: `wx-svelte-gantt` (SVAR, MIT license). Ships
+  raw Svelte source (compiled by the consuming app's own Svelte compiler)
+  rather than a precompiled bundle, so it builds against Svelte 5 without a
+  peer-dependency mismatch. Its built-in critical-path/slack visualization is
+  a PRO-only feature we don't use — critical-path highlighting is applied via
+  a custom `taskTemplate` component (`src/lib/components/GanttTaskBar.svelte`)
+  that renders its own `.critical` class on each bar/milestone, driven by our
+  own CPM output, matching the Graph/List views' highlight styling. Built-in
+  drag-to-resize/move and its task edit form are disabled; the Gantt view is
+  read-only, since dates are fully CPM-derived (spec: Non-goals).
