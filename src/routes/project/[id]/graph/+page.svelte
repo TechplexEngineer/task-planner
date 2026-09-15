@@ -1,13 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import GraphNode from './GraphNode.svelte';
-	import { NODE_SIZE } from '$lib/graph-layout';
-	import {
-		DEFAULT_VIEWPORT,
-		panViewport,
-		zoomViewportAtPoint,
-		type Viewport
-	} from '$lib/graph-viewport';
+	import { NODE_SIZE, computeBasePositions } from '$lib/graph-layout';
+	import { DEFAULT_VIEWPORT, panViewport, zoomViewportAtPoint, type Viewport } from '$lib/graph-viewport';
+	import { resolve } from '$app/paths';
 
 	let { data }: { data: PageData } = $props();
 
@@ -15,9 +11,16 @@
 	const VIEW_HEIGHT = 600;
 
 	let viewport = $state<Viewport>(DEFAULT_VIEWPORT);
-	let svgEl: SVGSVGElement;
+	let svgEl: SVGSVGElement | undefined = $state();
 	let panning = $state(false);
 	let lastPointer = { x: 0, y: 0 };
+
+	let tasks = $state(data.tasks.map((t) => ({ ...t })));
+	$effect(() => {
+		tasks = data.tasks.map((t) => ({ ...t }));
+	});
+
+	let basePositions = $derived(computeBasePositions(data.tasks));
 
 	let viewBox = $derived(
 		`${viewport.x} ${viewport.y} ${VIEW_WIDTH / viewport.scale} ${VIEW_HEIGHT / viewport.scale}`
@@ -25,7 +28,7 @@
 
 	function handleWheel(e: WheelEvent) {
 		e.preventDefault();
-		const rect = svgEl.getBoundingClientRect();
+		const rect = svgEl!.getBoundingClientRect();
 		const zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
 		viewport = zoomViewportAtPoint(viewport, { x: e.clientX, y: e.clientY }, rect, zoomFactor);
 	}
@@ -34,7 +37,7 @@
 		if (e.target !== svgEl) return;
 		panning = true;
 		lastPointer = { x: e.clientX, y: e.clientY };
-		svgEl.setPointerCapture(e.pointerId);
+		svgEl!.setPointerCapture(e.pointerId);
 	}
 
 	function handleBackgroundPointerMove(e: PointerEvent) {
@@ -48,6 +51,20 @@
 	function handleBackgroundPointerUp() {
 		panning = false;
 	}
+
+	async function handleDragEnd(taskId: number, absoluteX: number, absoluteY: number) {
+		const base = basePositions.get(taskId)!;
+		await fetch(resolve('/project/[id]/graph', { id: String(data.project.id) }), {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				type: 'position',
+				taskId,
+				offsetX: absoluteX - base.x,
+				offsetY: absoluteY - base.y
+			})
+		});
+	}
 </script>
 
 <h2>Graph</h2>
@@ -55,15 +72,15 @@
 <svg
 	bind:this={svgEl}
 	class="graph-canvas"
-	{viewBox}
+	viewBox={viewBox}
 	onwheel={handleWheel}
 	onpointerdown={handleBackgroundPointerDown}
 	onpointermove={handleBackgroundPointerMove}
 	onpointerup={handleBackgroundPointerUp}
 >
 	{#each data.dependencies as dep (dep.id)}
-		{@const from = data.tasks.find((t) => t.id === dep.predecessorId)}
-		{@const to = data.tasks.find((t) => t.id === dep.successorId)}
+		{@const from = tasks.find((t) => t.id === dep.predecessorId)}
+		{@const to = tasks.find((t) => t.id === dep.successorId)}
 		{#if from && to}
 			<line
 				class="edge"
@@ -74,9 +91,11 @@
 			/>
 		{/if}
 	{/each}
-	{#each data.tasks as task (task.id)}
-		<GraphNode {task} />
-	{/each}
+	{#if svgEl}
+		{#each tasks as task (task.id)}
+			<GraphNode {task} {viewport} canvasRect={svgEl.getBoundingClientRect()} onDragEnd={handleDragEnd} />
+		{/each}
+	{/if}
 </svg>
 
 <style>
