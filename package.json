@@ -49,6 +49,7 @@
 	"dependencies": {
 		"bootstrap": "^5.3.8",
 		"drizzle-orm": "^0.45.2",
-		"svelte-dnd-action": "^0.9.79"
+		"svelte-dnd-action": "^0.9.79",
+		"wx-svelte-gantt": "^2.7.0"
 	}
 }
