@@ -12,7 +12,8 @@
 		onCreateSuccessor,
 		onConnectorDragStart,
 		onConnectorDrop,
-		connectorDragActive
+		connectorDragActive,
+		onDelete
 	}: {
 		task: PageData['tasks'][number];
 		viewport: Viewport;
@@ -23,6 +24,7 @@
 		onConnectorDragStart: (taskId: number) => void;
 		onConnectorDrop: (successorId: number) => void;
 		connectorDragActive: boolean;
+		onDelete: (taskId: number) => void;
 	} = $props();
 
 	let dragging = $state(false);
@@ -135,6 +137,14 @@
 				onConnectorDragStart(task.id);
 			}}
 		/>
+		<g
+			class="delete-button"
+			onpointerdown={(e) => e.stopPropagation()}
+			onclick={() => onDelete(task.id)}
+		>
+			<circle cx={task.x + NODE_SIZE - 8} cy={task.y + 8} r="8" />
+			<text x={task.x + NODE_SIZE - 8} y={task.y + 8} text-anchor="middle" dominant-baseline="middle">×</text>
+		</g>
 	{/if}
 </g>
 
@@ -184,5 +194,16 @@
 	.connector-handle {
 		fill: steelblue;
 		cursor: crosshair;
+	}
+	.delete-button {
+		cursor: pointer;
+	}
+	.delete-button circle {
+		fill: crimson;
+	}
+	.delete-button text {
+		fill: white;
+		pointer-events: none;
+		font-size: 12px;
 	}
 </style>

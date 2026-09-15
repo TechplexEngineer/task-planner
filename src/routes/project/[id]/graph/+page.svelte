@@ -122,6 +122,22 @@
 		connectorFrom = null;
 		connectorPointer = null;
 	}
+
+	let deleteTaskForm: HTMLFormElement;
+	let deleteTaskIdInput: HTMLInputElement;
+
+	function handleDeleteTask(taskId: number) {
+		deleteTaskIdInput.value = String(taskId);
+		deleteTaskForm.requestSubmit();
+	}
+
+	let deleteDependencyForm: HTMLFormElement;
+	let deleteDependencyIdInput: HTMLInputElement;
+
+	function handleDeleteDependency(dependencyId: number) {
+		deleteDependencyIdInput.value = String(dependencyId);
+		deleteDependencyForm.requestSubmit();
+	}
 </script>
 
 <h2>Graph</h2>
@@ -147,6 +163,14 @@
 				y1={from.y + NODE_SIZE / 2}
 				x2={to.x}
 				y2={to.y + NODE_SIZE / 2}
+			/>
+			<line
+				class="edge-hit-area"
+				x1={from.x + NODE_SIZE}
+				y1={from.y + NODE_SIZE / 2}
+				x2={to.x}
+				y2={to.y + NODE_SIZE / 2}
+				onclick={() => handleDeleteDependency(dep.id)}
 			/>
 		{/if}
 	{/each}
@@ -174,6 +198,7 @@
 				onConnectorDragStart={handleConnectorDragStart}
 				onConnectorDrop={handleConnectorDrop}
 				connectorDragActive={connectorFrom !== null && connectorFrom !== task.id}
+				onDelete={handleDeleteTask}
 			/>
 		{/each}
 	{/if}
@@ -203,6 +228,25 @@
 	<p class="error">{form.error}</p>
 {/if}
 
+<form
+	bind:this={deleteTaskForm}
+	method="POST"
+	action="?/deleteTask"
+	use:enhance
+	style="display: none"
+>
+	<input bind:this={deleteTaskIdInput} type="hidden" name="id" value="" />
+</form>
+<form
+	bind:this={deleteDependencyForm}
+	method="POST"
+	action="?/deleteDependency"
+	use:enhance
+	style="display: none"
+>
+	<input bind:this={deleteDependencyIdInput} type="hidden" name="id" value="" />
+</form>
+
 <style>
 	.graph-canvas {
 		width: 100%;
@@ -218,5 +262,10 @@
 		stroke: steelblue;
 		stroke-width: 2;
 		stroke-dasharray: 4;
+	}
+	.edge-hit-area {
+		stroke: transparent;
+		stroke-width: 14;
+		cursor: pointer;
 	}
 </style>

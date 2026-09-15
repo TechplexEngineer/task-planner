@@ -4,9 +4,10 @@ import { getDb } from '$lib/server/db/client';
 import type { Db } from '$lib/server/db/client';
 import { listPositionsForTasks, resetPosition } from '$lib/server/repositories/positions';
 import { computeBasePositions } from '$lib/graph-layout';
-import { createTask, listTasksForProject } from '$lib/server/repositories/tasks';
+import { createTask, listTasksForProject, deleteTask as deleteTaskRow } from '$lib/server/repositories/tasks';
 import {
 	createDependency as createDependencyEdge,
+	deleteDependency as deleteDependencyRow,
 	listDependenciesForProject,
 	CycleError
 } from '$lib/server/repositories/dependencies';
@@ -88,6 +89,24 @@ export const actions: Actions = {
 			}
 			throw err;
 		}
+		await resetOffsetsForChangedLayers(db, projectId, before);
+	},
+
+	deleteTask: async ({ request, params, platform }) => {
+		const db = getDb(platform!.env.DB);
+		const data = await request.formData();
+		const projectId = Number(params.id);
+		const before = await currentLayers(db, projectId);
+		await deleteTaskRow(db, Number(data.get('id')));
+		await resetOffsetsForChangedLayers(db, projectId, before);
+	},
+
+	deleteDependency: async ({ request, params, platform }) => {
+		const db = getDb(platform!.env.DB);
+		const data = await request.formData();
+		const projectId = Number(params.id);
+		const before = await currentLayers(db, projectId);
+		await deleteDependencyRow(db, Number(data.get('id')));
 		await resetOffsetsForChangedLayers(db, projectId, before);
 	}
 };
