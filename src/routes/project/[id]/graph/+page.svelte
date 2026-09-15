@@ -1,12 +1,18 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import GraphNode from './GraphNode.svelte';
 	import { NODE_SIZE, computeBasePositions } from '$lib/graph-layout';
-	import { DEFAULT_VIEWPORT, panViewport, zoomViewportAtPoint, type Viewport } from '$lib/graph-viewport';
+	import {
+		DEFAULT_VIEWPORT,
+		panViewport,
+		screenToSvg,
+		zoomViewportAtPoint,
+		type Viewport
+	} from '$lib/graph-viewport';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const VIEW_WIDTH = 900;
 	const VIEW_HEIGHT = 600;
@@ -82,9 +88,45 @@
 		predecessorIdInput.value = String(predecessorId);
 		createSuccessorForm.requestSubmit();
 	}
+
+	let connectorFrom = $state<number | null>(null);
+	let connectorPointer = $state<{ x: number; y: number } | null>(null);
+
+	function handleConnectorDragStart(taskId: number) {
+		connectorFrom = taskId;
+	}
+
+	function handleWindowPointerMove(e: PointerEvent) {
+		if (connectorFrom === null || !svgEl) return;
+		connectorPointer = screenToSvg(
+			{ x: e.clientX, y: e.clientY },
+			svgEl.getBoundingClientRect(),
+			viewport
+		);
+	}
+
+	function handleWindowPointerUp() {
+		connectorFrom = null;
+		connectorPointer = null;
+	}
+
+	let createDependencyForm: HTMLFormElement;
+	let dependencyPredecessorInput: HTMLInputElement;
+	let dependencySuccessorInput: HTMLInputElement;
+
+	function handleConnectorDrop(successorId: number) {
+		if (connectorFrom === null) return;
+		dependencyPredecessorInput.value = String(connectorFrom);
+		dependencySuccessorInput.value = String(successorId);
+		createDependencyForm.requestSubmit();
+		connectorFrom = null;
+		connectorPointer = null;
+	}
 </script>
 
 <h2>Graph</h2>
+
+<svelte:window onpointermove={handleWindowPointerMove} onpointerup={handleWindowPointerUp} />
 
 <svg
 	bind:this={svgEl}
@@ -108,6 +150,18 @@
 			/>
 		{/if}
 	{/each}
+	{#if connectorFrom !== null && connectorPointer}
+		{@const source = tasks.find((t) => t.id === connectorFrom)}
+		{#if source}
+			<line
+				class="connector-preview"
+				x1={source.x + NODE_SIZE}
+				y1={source.y + NODE_SIZE / 2}
+				x2={connectorPointer.x}
+				y2={connectorPointer.y}
+			/>
+		{/if}
+	{/if}
 	{#if svgEl}
 		{#each tasks as task (task.id)}
 			<GraphNode
@@ -117,6 +171,9 @@
 				onDragEnd={handleDragEnd}
 				onTitleChange={handleTitleChange}
 				onCreateSuccessor={handleCreateSuccessor}
+				onConnectorDragStart={handleConnectorDragStart}
+				onConnectorDrop={handleConnectorDrop}
+				connectorDragActive={connectorFrom !== null && connectorFrom !== task.id}
 			/>
 		{/each}
 	{/if}
@@ -132,6 +189,20 @@
 	<input bind:this={predecessorIdInput} type="hidden" name="predecessorId" value="" />
 </form>
 
+<form
+	bind:this={createDependencyForm}
+	method="POST"
+	action="?/createDependency"
+	use:enhance
+	style="display: none"
+>
+	<input bind:this={dependencyPredecessorInput} type="hidden" name="predecessorId" value="" />
+	<input bind:this={dependencySuccessorInput} type="hidden" name="successorId" value="" />
+</form>
+{#if form?.formName === 'createDependency' && form.error}
+	<p class="error">{form.error}</p>
+{/if}
+
 <style>
 	.graph-canvas {
 		width: 100%;
@@ -142,5 +213,10 @@
 	.edge {
 		stroke: #999;
 		stroke-width: 2;
+	}
+	.connector-preview {
+		stroke: steelblue;
+		stroke-width: 2;
+		stroke-dasharray: 4;
 	}
 </style>

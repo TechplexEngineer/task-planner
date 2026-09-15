@@ -1,10 +1,17 @@
-import { type Actions } from '@sveltejs/kit';
+import { fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db/client';
-import { listPositionsForTasks } from '$lib/server/repositories/positions';
+import type { Db } from '$lib/server/db/client';
+import { listPositionsForTasks, resetPosition } from '$lib/server/repositories/positions';
 import { computeBasePositions } from '$lib/graph-layout';
-import { createTask } from '$lib/server/repositories/tasks';
-import { createDependency } from '$lib/server/repositories/dependencies';
+import { createTask, listTasksForProject } from '$lib/server/repositories/tasks';
+import {
+	createDependency as createDependencyEdge,
+	listDependenciesForProject,
+	CycleError
+} from '$lib/server/repositories/dependencies';
+import { computeLayers } from '$lib/server/scheduling/layout';
+import { taskIdsWithChangedLayer } from '$lib/server/scheduling/offset-reset';
 
 export const load: PageServerLoad = async ({ parent, platform }) => {
 	const { project, tasks, dependencies } = await parent();
@@ -28,6 +35,26 @@ export const load: PageServerLoad = async ({ parent, platform }) => {
 	return { project, tasks: graphTasks, dependencies };
 };
 
+async function currentLayers(db: Db, projectId: number) {
+	const tasks = await listTasksForProject(db, projectId);
+	const dependencies = await listDependenciesForProject(db, projectId);
+	return computeLayers(
+		tasks.map((t) => t.id),
+		dependencies.map((d) => ({ predecessorId: d.predecessorId, successorId: d.successorId }))
+	);
+}
+
+async function resetOffsetsForChangedLayers(
+	db: Db,
+	projectId: number,
+	before: Map<number, number>
+) {
+	const after = await currentLayers(db, projectId);
+	for (const taskId of taskIdsWithChangedLayer(before, after)) {
+		await resetPosition(db, taskId);
+	}
+}
+
 export const actions: Actions = {
 	createSuccessor: async ({ request, params, platform }) => {
 		const db = getDb(platform!.env.DB);
@@ -42,6 +69,25 @@ export const actions: Actions = {
 			type: 'task',
 			durationDays: 1
 		});
-		await createDependency(db, projectId, predecessorId, task.id);
+		await createDependencyEdge(db, projectId, predecessorId, task.id);
+	},
+
+	createDependency: async ({ request, params, platform }) => {
+		const db = getDb(platform!.env.DB);
+		const data = await request.formData();
+		const predecessorId = Number(data.get('predecessorId'));
+		const successorId = Number(data.get('successorId'));
+		const projectId = Number(params.id);
+
+		const before = await currentLayers(db, projectId);
+		try {
+			await createDependencyEdge(db, projectId, predecessorId, successorId);
+		} catch (err) {
+			if (err instanceof CycleError) {
+				return fail(400, { formName: 'createDependency', error: err.message });
+			}
+			throw err;
+		}
+		await resetOffsetsForChangedLayers(db, projectId, before);
 	}
 };

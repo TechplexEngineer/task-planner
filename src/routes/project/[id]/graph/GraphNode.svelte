@@ -9,7 +9,10 @@
 		canvasRect,
 		onDragEnd,
 		onTitleChange,
-		onCreateSuccessor
+		onCreateSuccessor,
+		onConnectorDragStart,
+		onConnectorDrop,
+		connectorDragActive
 	}: {
 		task: PageData['tasks'][number];
 		viewport: Viewport;
@@ -17,6 +20,9 @@
 		onDragEnd: (taskId: number, offsetX: number, offsetY: number) => void;
 		onTitleChange: (taskId: number, title: string) => void;
 		onCreateSuccessor: (predecessorId: number) => void;
+		onConnectorDragStart: (taskId: number) => void;
+		onConnectorDrop: (successorId: number) => void;
+		connectorDragActive: boolean;
 	} = $props();
 
 	let dragging = $state(false);
@@ -76,7 +82,10 @@
 	data-task-id={task.id}
 	onpointerdown={handlePointerDown}
 	onpointermove={handlePointerMove}
-	onpointerup={handlePointerUp}
+	onpointerup={() => {
+		handlePointerUp();
+		if (connectorDragActive) onConnectorDrop(task.id);
+	}}
 	ondblclick={startEditingTitle}
 	onpointerenter={() => (hovering = true)}
 	onpointerleave={() => (hovering = false)}
@@ -88,6 +97,7 @@
 		height={NODE_SIZE}
 		class="node"
 		class:critical={task.schedule.onCriticalPath}
+		class:drop-target={connectorDragActive}
 		data-status={task.status}
 	/>
 	{#if editingTitle}
@@ -115,6 +125,16 @@
 			<circle cx={task.x + NODE_SIZE / 2} cy={task.y + NODE_SIZE + 14} r="10" />
 			<text x={task.x + NODE_SIZE / 2} y={task.y + NODE_SIZE + 14} text-anchor="middle" dominant-baseline="middle">+</text>
 		</g>
+		<circle
+			class="connector-handle"
+			cx={task.x + NODE_SIZE}
+			cy={task.y + NODE_SIZE / 2}
+			r="6"
+			onpointerdown={(e) => {
+				e.stopPropagation();
+				onConnectorDragStart(task.id);
+			}}
+		/>
 	{/if}
 </g>
 
@@ -128,6 +148,10 @@
 	.node.critical {
 		stroke: crimson;
 		stroke-width: 3;
+	}
+	.node.drop-target {
+		stroke: seagreen;
+		stroke-width: 4;
 	}
 	.node[data-status='done'] {
 		fill: #d4f7d4;
@@ -156,5 +180,9 @@
 		fill: white;
 		pointer-events: none;
 		font-size: 14px;
+	}
+	.connector-handle {
+		fill: steelblue;
+		cursor: crosshair;
 	}
 </style>
