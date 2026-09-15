@@ -36,7 +36,13 @@
 						<a class="nav-link disabled" tabindex="-1" aria-disabled="true">Graph</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link disabled" tabindex="-1" aria-disabled="true">Gantt</a>
+						<a
+							class="nav-link"
+							class:active={currentMode === 'gantt'}
+							href={resolve('/project/[id]/gantt', { id: String(project.id) })}
+						>
+							Gantt
+						</a>
 					</li>
 				</ul>
 				<span class="navbar-text me-3">{project.name}</span>
