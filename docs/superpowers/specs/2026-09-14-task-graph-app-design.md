@@ -90,17 +90,49 @@ computation happens once per load, not per view.
 - **Layout**: nodes auto-arranged into columns by `layer`. Tasks in the same
   column have no dependency ordering between them and can run in parallel —
   the column _is_ the parallelism signal. Within a column, order by
-  `priority_rank` as a simple, sufficient crossing-reduction heuristic.
+  `priority_rank` as a simple, sufficient crossing-reduction heuristic. Base
+  pixel position per task = `(layer * COLUMN_WIDTH, indexWithinLayer *
+  ROW_HEIGHT)`; rendered position = base + the task's `(offset_x, offset_y)`
+  from `task_positions`.
 - **Manual override**: dragging a node writes an `(offset_x, offset_y)` to
-  `task_positions`. Re-layout (triggered on structural change — task/edge
-  added/removed) recomputes base positions but preserves each task's offset;
-  if a task's layer changes enough to make the offset misleading (e.g. it
-  jumps to a distant column), its offset resets.
-- **Rendering**: custom SVG. Square blocks styled by `status`; a distinct
-  highlight for `on_critical_path`, shared visual language with Gantt/list.
-- **Interactions**: drag from one node's edge to another to create a
-  dependency (rejected inline if it would cycle); click to open an edit panel
-  (title/description/duration/status); delete to remove a task or edge.
+  `task_positions` on drop. Re-layout (triggered on structural change —
+  task/edge added/removed) recomputes base positions but preserves each
+  task's offset; a task's offset resets to `(0, 0)` whenever that specific
+  create/delete changes its own computed `layer` (a deterministic rule, not a
+  distance heuristic).
+- **Rendering**: custom SVG (hand-rolled pointer-event handling for drag/pan,
+  wheel handler + `viewBox` manipulation for zoom — no pan/zoom or drag
+  library dependency). Square blocks styled by `status`; a distinct highlight
+  for `on_critical_path`, shared visual language with Gantt/list. Node titles
+  render as an editable `<input>` inside a `<foreignObject>` for native text
+  editing; the description/duration/status popover is a plain HTML element
+  positioned by projecting the node's SVG coordinates through the current
+  pan/zoom transform.
+- **Interactions**:
+  - Drag a node's body to reposition it.
+  - Double-click a node's title to edit it inline; save on blur, debounced
+    while typing.
+  - Hovering a node reveals a small "+" on its successor-facing edge;
+    clicking it creates a new task **and** the dependency edge from the
+    hovered task to it, in one action, positioned near the parent.
+  - Each node has a small connector handle; dragging from it renders a live
+    line following the pointer, and dropping on another node creates a
+    dependency (rejected inline, same message as List view, if it would
+    cycle).
+  - A small per-node/edge control deletes a task or edge.
+  - Panning/zooming the canvas is available from the start (click-drag
+    background to pan, wheel to zoom).
+- **Persistence model**: structural changes (new task+edge via "+",
+  handle-drag edge creation, deletes) go through SvelteKit form actions
+  (`use:enhance`), which recompute schedule/layers server-side and reload
+  view data — acceptable since these are discrete clicks, not continuous
+  gestures. Continuous, non-structural interactions (drag reposition, inline
+  title edit, status/description edits) hit a dedicated `+server.ts` PATCH
+  endpoint via plain `fetch`, updating local component state directly with
+  no page invalidation, which is what keeps dragging/typing feeling
+  immediate. Duration edits go through the same PATCH endpoint but the
+  response includes recomputed schedule entries for all tasks, merged into
+  local state (no full reload) since duration affects CPM/critical path.
 
 ## Gantt view
 
