@@ -129,6 +129,14 @@
 		</text>
 	{/if}
 	{#if hovering}
+		<rect
+			class="hover-bridge"
+			x={task.x}
+			y={task.y + NODE_SIZE}
+			width={NODE_SIZE}
+			height="14"
+			fill="transparent"
+		/>
 		<g
 			class="add-successor-button"
 			onpointerdown={(e) => e.stopPropagation()}
