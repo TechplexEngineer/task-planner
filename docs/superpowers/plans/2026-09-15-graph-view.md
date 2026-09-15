@@ -2099,12 +2099,18 @@ Modify `src/routes/project/[id]/graph/GraphNode.svelte`: add an `onDelete` prop 
 ```svelte
 	{#if hovering}
 		<!-- ...existing add-successor-button and connector-handle... -->
-		<g class="delete-button" onclick={() => onDelete(task.id)}>
+		<g
+			class="delete-button"
+			onpointerdown={(e) => e.stopPropagation()}
+			onclick={() => onDelete(task.id)}
+		>
 			<circle cx={task.x + NODE_SIZE - 8} cy={task.y + 8} r="8" />
 			<text x={task.x + NODE_SIZE - 8} y={task.y + 8} text-anchor="middle" dominant-baseline="middle">×</text>
 		</g>
 	{/if}
 ```
+
+Note: `onpointerdown` must call `stopPropagation()` here for the same reason the add-successor-button (Task 9) and connector-handle (Task 10) do — the outer `<g>`'s `setPointerCapture` (used for node-reposition drag) otherwise retargets the subsequent `click` event away from this nested button, so it silently never fires.
 
 Add styles: `.delete-button { cursor: pointer; } .delete-button circle { fill: crimson; } .delete-button text { fill: white; pointer-events: none; font-size: 12px; }`.
 
