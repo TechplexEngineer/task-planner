@@ -29,7 +29,7 @@ test('editing duration in the popover updates the critical-path highlight withou
 	await expect(nodes.nth(1).locator('rect.node.critical')).toBeVisible();
 	await expect(nodes.first().locator('rect.node.critical')).toHaveCount(0);
 
-	await nodes.first().locator('rect.node').click();
+	await nodes.first().locator('rect.node').dblclick();
 	const durationInput = page.locator('.details-popover input[type="number"]');
 	await expect(durationInput).toBeVisible();
 	await durationInput.fill('10');
