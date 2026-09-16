@@ -14,11 +14,11 @@ test('create tasks, add a dependency, reject a cycle, and see the critical path 
 
 	await page.getByPlaceholder('Title').fill('Buy bread');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Buy bread' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Buy bread' })).toBeVisible();
 
 	await page.getByPlaceholder('Title').fill('Spread peanut butter');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Spread peanut butter' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Spread peanut butter' })).toBeVisible();
 
 	// Buy bread -> Spread peanut butter
 	const predecessorSelect = page.locator('select[name="predecessorId"]');
@@ -37,9 +37,9 @@ test('create tasks, add a dependency, reject a cycle, and see the critical path 
 	await expect(page.getByText('This dependency would create a cycle')).toBeVisible();
 
 	// Both tasks are on the only path through the graph, so both are critical.
-	await expect(page.locator('li.critical').filter({ hasText: 'Buy bread' })).toBeVisible();
+	await expect(page.locator('tbody tr.critical').filter({ hasText: 'Buy bread' })).toBeVisible();
 	await expect(
-		page.locator('li.critical').filter({ hasText: 'Spread peanut butter' })
+		page.locator('tbody tr.critical').filter({ hasText: 'Spread peanut butter' })
 	).toBeVisible();
 });
 
@@ -55,19 +55,19 @@ test('reordering tasks keeps the new order after the page data refetches', async
 
 	await page.getByPlaceholder('Title').fill('First task');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'First task' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'First task' })).toBeVisible();
 
 	await page.getByPlaceholder('Title').fill('Second task');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Second task' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Second task' })).toBeVisible();
 
 	const firstId = await page
-		.locator('li')
+		.locator('tbody tr')
 		.filter({ hasText: 'First task' })
 		.locator('form[action="?/deleteTask"] input[name="id"]')
 		.getAttribute('value');
 	const secondId = await page
-		.locator('li')
+		.locator('tbody tr')
 		.filter({ hasText: 'Second task' })
 		.locator('form[action="?/deleteTask"] input[name="id"]')
 		.getAttribute('value');
@@ -84,6 +84,6 @@ test('reordering tasks keeps the new order after the page data refetches', async
 	// After invalidateAll() refetches tasks, the rendered order must reflect the
 	// new priority_rank — it must not revert to insertion order.
 	await expect
-		.poll(() => page.locator('li strong').allTextContents())
+		.poll(() => page.locator('tbody tr strong').allTextContents())
 		.toEqual(['Second task', 'First task']);
 });
