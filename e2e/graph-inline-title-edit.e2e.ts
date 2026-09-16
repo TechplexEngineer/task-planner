@@ -16,7 +16,7 @@ test('editing a title inline persists across reload', async ({ page }) => {
 	await expect(page.locator('li').filter({ hasText: 'Original title' })).toBeVisible();
 	await page.getByRole('link', { name: 'Graph' }).click();
 
-	await page.locator('g[data-task-id] rect.node').dblclick();
+	await page.locator('g[data-task-id] rect.node').click();
 	const input = page.locator('.title-input');
 	await expect(input).toBeFocused();
 	await input.fill('Renamed title');
