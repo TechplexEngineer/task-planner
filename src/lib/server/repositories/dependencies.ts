@@ -20,6 +20,12 @@ export async function createDependency(
 	successorId: number
 ) {
 	const existing = await listDependenciesForProject(db, projectId);
+	const duplicate = existing.find(
+		(e) => e.predecessorId === predecessorId && e.successorId === successorId
+	);
+	if (duplicate) {
+		return duplicate;
+	}
 	const existingEdges = existing.map((e) => ({
 		predecessorId: e.predecessorId,
 		successorId: e.successorId

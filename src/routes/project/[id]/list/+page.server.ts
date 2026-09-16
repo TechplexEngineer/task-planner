@@ -6,6 +6,7 @@ import {
 	deleteDependency,
 	CycleError
 } from '$lib/server/repositories/dependencies';
+import { currentLayers, resetOffsetsForChangedLayers } from '$lib/server/scheduling/offset-reset';
 
 export const actions: Actions = {
 	createTask: async ({ request, params, platform }) => {
@@ -38,10 +39,13 @@ export const actions: Actions = {
 		});
 	},
 
-	deleteTask: async ({ request, platform }) => {
+	deleteTask: async ({ request, params, platform }) => {
 		const db = getDb(platform!.env.DB);
 		const data = await request.formData();
+		const projectId = Number(params.id);
+		const before = await currentLayers(db, projectId);
 		await deleteTask(db, Number(data.get('id')));
+		await resetOffsetsForChangedLayers(db, projectId, before);
 	},
 
 	createDependency: async ({ request, params, platform }) => {
@@ -49,20 +53,26 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const predecessorId = Number(data.get('predecessorId'));
 		const successorId = Number(data.get('successorId'));
+		const projectId = Number(params.id);
+		const before = await currentLayers(db, projectId);
 		try {
-			await createDependency(db, Number(params.id), predecessorId, successorId);
+			await createDependency(db, projectId, predecessorId, successorId);
 		} catch (err) {
 			if (err instanceof CycleError) {
 				return fail(400, { formName: 'createDependency', error: err.message });
 			}
 			throw err;
 		}
+		await resetOffsetsForChangedLayers(db, projectId, before);
 	},
 
-	deleteDependency: async ({ request, platform }) => {
+	deleteDependency: async ({ request, params, platform }) => {
 		const db = getDb(platform!.env.DB);
 		const data = await request.formData();
+		const projectId = Number(params.id);
+		const before = await currentLayers(db, projectId);
 		await deleteDependency(db, Number(data.get('id')));
+		await resetOffsetsForChangedLayers(db, projectId, before);
 	},
 
 	reorder: async ({ request, platform }) => {

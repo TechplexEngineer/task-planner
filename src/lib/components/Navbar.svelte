@@ -33,7 +33,13 @@
 						</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link disabled" tabindex="-1" aria-disabled="true">Graph</a>
+						<a
+							class="nav-link"
+							class:active={currentMode === 'graph'}
+							href={resolve('/project/[id]/graph', { id: String(project.id) })}
+						>
+							Graph
+						</a>
 					</li>
 					<li class="nav-item">
 						<a
