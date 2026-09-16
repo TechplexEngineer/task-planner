@@ -26,27 +26,42 @@
 
 <h2>Task list</h2>
 
-<ul
-	use:dndzone={{ items, flipDurationMs: 150 }}
-	onconsider={handleConsider}
-	onfinalize={handleFinalize}
->
-	{#each items as task (task.id)}
-		<li class:critical={task.schedule.onCriticalPath}>
-			<span>{task.type === 'milestone' ? '◆' : '▢'}</span>
-			<strong>{task.title}</strong>
-			<span>{task.status}</span>
-			<span>{task.durationDays}d</span>
-			{#if violatingTaskIds.has(task.id)}
-				<span class="warning">⚠ ranked above a predecessor</span>
-			{/if}
-			<form method="POST" action="?/deleteTask" use:enhance>
-				<input type="hidden" name="id" value={task.id} />
-				<button type="submit">Delete</button>
-			</form>
-		</li>
-	{/each}
-</ul>
+<table class="table table-hover align-middle">
+	<thead>
+		<tr>
+			<th scope="col"></th>
+			<th scope="col">Title</th>
+			<th scope="col">Status</th>
+			<th scope="col">Duration</th>
+			<th scope="col"></th>
+		</tr>
+	</thead>
+	<tbody
+		use:dndzone={{ items, flipDurationMs: 150 }}
+		onconsider={handleConsider}
+		onfinalize={handleFinalize}
+	>
+		{#each items as task (task.id)}
+			<tr class:critical={task.schedule.onCriticalPath}>
+				<td>{task.type === 'milestone' ? '◆' : '▢'}</td>
+				<td>
+					<strong>{task.title}</strong>
+					{#if violatingTaskIds.has(task.id)}
+						<span class="warning ms-2">⚠ ranked above a predecessor</span>
+					{/if}
+				</td>
+				<td>{task.status}</td>
+				<td>{task.durationDays}d</td>
+				<td>
+					<form method="POST" action="?/deleteTask" use:enhance>
+						<input type="hidden" name="id" value={task.id} />
+						<button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+					</form>
+				</td>
+			</tr>
+		{/each}
+	</tbody>
+</table>
 
 <form bind:this={reorderForm} method="POST" action="?/reorder" use:enhance>
 	<input bind:this={orderedIdsInput} type="hidden" name="orderedIds" value="" />
@@ -130,7 +145,7 @@
 
 <style>
 	.critical {
-		outline: 2px solid crimson;
+		box-shadow: inset 0 0 0 2px crimson;
 	}
 	.warning {
 		color: darkorange;
