@@ -12,21 +12,6 @@
 	{#each data.projects as project (project.id)}
 		<li>
 			<a href={resolve('/project/[id]/list', { id: String(project.id) })}>{project.name}</a>
-			<form method="POST" action="?/rename" use:enhance>
-				<input type="hidden" name="id" value={project.id} />
-				<input
-					type="text"
-					name="name"
-					value={project.name}
-					aria-label="Rename project"
-					class="form-control"
-				/>
-				<button type="submit" class="btn btn-primary btn-sm">Rename</button>
-			</form>
-			<form method="POST" action="?/delete" use:enhance>
-				<input type="hidden" name="id" value={project.id} />
-				<button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-			</form>
 		</li>
 	{/each}
 </ul>
