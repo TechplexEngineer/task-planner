@@ -104,7 +104,7 @@ test('importing multiline text creates a chained task per line', async ({ page }
 	await page.getByRole('button', { name: 'Import' }).click();
 
 	await expect
-		.poll(() => page.locator('li strong').allTextContents())
+		.poll(() => page.locator('tbody tr strong').allTextContents())
 		.toEqual(['Design', 'Build', 'Ship']);
 
 	await expect(page.locator('li').filter({ hasText: 'Design → Build' })).toBeVisible();
