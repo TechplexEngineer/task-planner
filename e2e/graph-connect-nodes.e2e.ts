@@ -12,13 +12,13 @@ test('drag-connecting two nodes creates a dependency, and the reverse is rejecte
 
 	await page.getByPlaceholder('Title').fill('First');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'First' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'First' })).toBeVisible();
 
 	await page.getByPlaceholder('Title').fill('Second');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Second' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Second' })).toBeVisible();
 
-	await page.getByRole('link', { name: 'Graph' }).click();
+	await page.getByRole('link', { name: 'Graph', exact: true }).click();
 
 	const nodes = page.locator('g[data-task-id]');
 	const firstNode = nodes.first();

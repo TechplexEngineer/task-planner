@@ -13,8 +13,8 @@ test('editing a title inline persists across reload', async ({ page }) => {
 	// Wait for the task's use:enhance submission (and its invalidateAll) to settle
 	// before navigating away - otherwise the still-in-flight form action can win a
 	// race against the Graph link's navigation and leave us on the List view.
-	await expect(page.locator('li').filter({ hasText: 'Original title' })).toBeVisible();
-	await page.getByRole('link', { name: 'Graph' }).click();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Original title' })).toBeVisible();
+	await page.getByRole('link', { name: 'Graph', exact: true }).click();
 
 	await page.locator('g[data-task-id] rect.node').click();
 	const input = page.locator('.title-input');

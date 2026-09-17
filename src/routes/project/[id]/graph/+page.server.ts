@@ -2,7 +2,8 @@ import { fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db/client';
 import { listPositionsForTasks } from '$lib/server/repositories/positions';
-import { computeBasePositions } from '$lib/graph-layout';
+import { computeBasePositions, type Point } from '$lib/graph-layout';
+import { computeAutoLayout } from '$lib/graph-autolayout';
 import { createTask, deleteTask as deleteTaskRow } from '$lib/server/repositories/tasks';
 import {
 	createDependency as createDependencyEdge,
@@ -20,13 +21,22 @@ export const load: PageServerLoad = async ({ parent, platform }) => {
 	);
 	const basePositions = computeBasePositions(tasks);
 
-	const graphTasks = tasks.map((task) => {
+	const pinnedPositions = new Map<number, Point>();
+	for (const task of tasks) {
+		const offset = offsets.get(task.id);
+		if (!offset) continue;
 		const base = basePositions.get(task.id)!;
-		const offset = offsets.get(task.id) ?? { offsetX: 0, offsetY: 0 };
+		pinnedPositions.set(task.id, { x: base.x + offset.offsetX, y: base.y + offset.offsetY });
+	}
+	const layout = computeAutoLayout(tasks, dependencies, pinnedPositions);
+
+	const graphTasks = tasks.map((task) => {
+		const position = layout.get(task.id)!;
 		return {
 			...task,
-			x: base.x + offset.offsetX,
-			y: base.y + offset.offsetY
+			x: position.x,
+			y: position.y,
+			pinned: pinnedPositions.has(task.id)
 		};
 	});
 
