@@ -17,12 +17,12 @@ test('editing duration in the popover updates the critical-path highlight withou
 	// Wait for the list to reflect the first task before typing the second: use:enhance's
 	// default form.reset() (fired once the first submission resolves) would otherwise race
 	// with filling the still-attached Title input for the second task and wipe it.
-	await expect(page.locator('li').filter({ hasText: 'Short branch' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Short branch' })).toBeVisible();
 	await page.getByPlaceholder('Title').fill('Long branch');
 	await page.locator('input[name="durationDays"]').fill('5');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Long branch' })).toBeVisible();
-	await page.getByRole('link', { name: 'Graph' }).click();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Long branch' })).toBeVisible();
+	await page.getByRole('link', { name: 'Graph', exact: true }).click();
 
 	const nodes = page.locator('g[data-task-id]');
 	// "Long branch" (created second, duration 5) starts as the sole critical-path node.

@@ -1,7 +1,14 @@
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
 	import GraphNode from './GraphNode.svelte';
-	import { NODE_SIZE, VIEW_WIDTH, VIEW_HEIGHT, computeBasePositions } from '$lib/graph-layout';
+	import {
+		NODE_SIZE,
+		VIEW_WIDTH,
+		VIEW_HEIGHT,
+		computeBasePositions,
+		type Point
+	} from '$lib/graph-layout';
+	import { computeAutoLayout } from '$lib/graph-autolayout';
 	import {
 		DEFAULT_VIEWPORT,
 		panViewport,
@@ -69,6 +76,8 @@
 
 	async function handleDragEnd(taskId: number, absoluteX: number, absoluteY: number) {
 		const base = basePositions.get(taskId)!;
+		const task = tasks.find((t) => t.id === taskId);
+		if (task) task.pinned = true;
 		await fetch(resolve('/project/[id]/graph', { id: String(data.project.id) }), {
 			method: 'PATCH',
 			headers: { 'content-type': 'application/json' },
@@ -78,6 +87,29 @@
 				offsetX: absoluteX - base.x,
 				offsetY: absoluteY - base.y
 			})
+		});
+	}
+
+	async function handleUnpin(taskId: number) {
+		// Plain Map: a scratch value consumed synchronously within this function, not component state.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const stillPinned = new Map<number, Point>();
+		for (const t of tasks) {
+			if (t.pinned && t.id !== taskId) stillPinned.set(t.id, { x: t.x, y: t.y });
+		}
+		const layout = computeAutoLayout(data.tasks, data.dependencies, stillPinned);
+		for (const t of tasks) {
+			if (t.id === taskId) t.pinned = false;
+			if (!stillPinned.has(t.id)) {
+				const position = layout.get(t.id)!;
+				t.x = position.x;
+				t.y = position.y;
+			}
+		}
+		await fetch(resolve('/project/[id]/graph', { id: String(data.project.id) }), {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ type: 'unpin', taskId })
 		});
 	}
 
@@ -215,6 +247,19 @@
 	onpointermove={handleBackgroundPointerMove}
 	onpointerup={handleBackgroundPointerUp}
 >
+	<defs>
+		<marker
+			id="dependency-arrowhead"
+			viewBox="0 0 10 10"
+			refX="9"
+			refY="5"
+			markerWidth="6"
+			markerHeight="6"
+			orient="auto"
+		>
+			<path d="M0,0 L10,5 L0,10 z" class="arrowhead" />
+		</marker>
+	</defs>
 	{#each data.dependencies as dep (dep.id)}
 		{@const from = tasks.find((t) => t.id === dep.predecessorId)}
 		{@const to = tasks.find((t) => t.id === dep.successorId)}
@@ -227,7 +272,7 @@
 				onpointerenter={() => (hoveredDependencyId = dep.id)}
 				onpointerleave={() => (hoveredDependencyId = null)}
 			>
-				<line class="edge" {x1} {y1} {x2} {y2} />
+				<line class="edge" {x1} {y1} {x2} {y2} marker-end="url(#dependency-arrowhead)" />
 				<line class="edge-hit-area" {x1} {y1} {x2} {y2} />
 				{#if hoveredDependencyId === dep.id}
 					<g
@@ -273,6 +318,7 @@
 				connectorDragActive={connectorFrom !== null && connectorFrom !== task.id}
 				onDelete={handleDeleteTask}
 				onOpenDetails={handleOpenDetails}
+				onUnpin={handleUnpin}
 			/>
 		{/each}
 	{/if}
@@ -360,6 +406,9 @@
 	.edge {
 		stroke: #999;
 		stroke-width: 2;
+	}
+	.arrowhead {
+		fill: #999;
 	}
 	.connector-preview {
 		stroke: steelblue;

@@ -7,7 +7,7 @@ test('panning and zooming change the canvas viewBox', async ({ page }) => {
 	await page.getByLabel('New project name').fill(projectName);
 	await page.getByRole('button', { name: 'Create project' }).click();
 	await page.locator('li').filter({ hasText: projectName }).getByRole('link').click();
-	await page.getByRole('link', { name: 'Graph' }).click();
+	await page.getByRole('link', { name: 'Graph', exact: true }).click();
 
 	const canvas = page.locator('svg.graph-canvas');
 	const initialViewBox = await canvas.getAttribute('viewBox');

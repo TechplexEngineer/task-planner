@@ -1,12 +1,13 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db/client';
-import { upsertPosition } from '$lib/server/repositories/positions';
+import { upsertPosition, resetPosition } from '$lib/server/repositories/positions';
 import { updateTask, listTasksForProject, type TaskPatch } from '$lib/server/repositories/tasks';
 import { listDependenciesForProject } from '$lib/server/repositories/dependencies';
 import { computeSchedule } from '$lib/server/scheduling/cpm';
 
 type PatchBody =
 	| { type: 'position'; taskId: number; offsetX: number; offsetY: number }
+	| { type: 'unpin'; taskId: number }
 	| { type: 'fields'; taskId: number; patch: TaskPatch };
 
 export const PATCH: RequestHandler = async ({ request, params, platform }) => {
@@ -16,6 +17,11 @@ export const PATCH: RequestHandler = async ({ request, params, platform }) => {
 
 	if (body.type === 'position') {
 		await upsertPosition(db, body.taskId, body.offsetX, body.offsetY);
+		return json({ ok: true });
+	}
+
+	if (body.type === 'unpin') {
+		await resetPosition(db, body.taskId);
 		return json({ ok: true });
 	}
 
