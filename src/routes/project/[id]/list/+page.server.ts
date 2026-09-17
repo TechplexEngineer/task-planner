@@ -1,4 +1,4 @@
-import { fail, type Actions } from '@sveltejs/kit';
+import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db/client';
 import { createTask, updateTask, deleteTask, reorderTasks } from '$lib/server/repositories/tasks';
 import {
@@ -6,9 +6,26 @@ import {
 	deleteDependency,
 	CycleError
 } from '$lib/server/repositories/dependencies';
+import { deleteProject, renameProject } from '$lib/server/repositories/projects';
 import { currentLayers, resetOffsetsForChangedLayers } from '$lib/server/scheduling/offset-reset';
 
 export const actions: Actions = {
+	renameProject: async ({ request, params, platform }) => {
+		const db = getDb(platform!.env.DB);
+		const data = await request.formData();
+		const name = data.get('name');
+		if (typeof name !== 'string' || name.trim() === '') {
+			return fail(400, { formName: 'renameProject', error: 'Project name is required' });
+		}
+		await renameProject(db, Number(params.id), name.trim());
+	},
+
+	deleteProject: async ({ params, platform }) => {
+		const db = getDb(platform!.env.DB);
+		await deleteProject(db, Number(params.id));
+		redirect(303, '/');
+	},
+
 	createTask: async ({ request, params, platform }) => {
 		const db = getDb(platform!.env.DB);
 		const data = await request.formData();
