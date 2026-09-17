@@ -18,9 +18,11 @@ interface ScheduledTaskInput {
 	id: number;
 	title: string;
 	type: 'task' | 'milestone';
+	displaySchedule: {
+		start: number;
+		finish: number;
+	};
 	schedule: {
-		earliestStart: number;
-		earliestFinish: number;
 		onCriticalPath: boolean;
 	};
 }
@@ -40,11 +42,22 @@ export function toGanttTasks(projectStartDate: string, tasks: ScheduledTaskInput
 	return tasks.map((task) => ({
 		id: task.id,
 		text: task.title,
-		start: addDays(projectStartDate, task.schedule.earliestStart),
-		end: addDays(projectStartDate, task.schedule.earliestFinish),
+		start: addDays(projectStartDate, task.displaySchedule.start),
+		end: addDays(projectStartDate, task.displaySchedule.finish),
 		type: task.type,
 		critical: task.schedule.onCriticalPath
 	}));
+}
+
+// Inverse of addDays: turns a calendar date picked in the Gantt UI back into a
+// day-offset from the project start, so it can be compared against day-offset
+// schedule data. Normalizes both sides to local midnight first so DST
+// transitions can't shift the result by a fractional day.
+export function dateToOffsetDays(projectStartDate: string, date: Date): number {
+	const [year, month, day] = projectStartDate.split('-').map(Number);
+	const start = new Date(year, month - 1, day);
+	const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+	return Math.round((target.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
 }
 
 export function toGanttLinks(dependencies: DependencyEdgeInput[]): GanttLink[] {

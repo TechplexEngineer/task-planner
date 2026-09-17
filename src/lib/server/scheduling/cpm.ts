@@ -14,36 +14,53 @@ export interface ScheduleEntry {
 	onCriticalPath: boolean;
 }
 
+// A memoized forward pass over the dependency DAG: each task starts at the
+// latest of its predecessors' finishes (0 if it has none), plus whatever
+// per-task delay the caller supplies, and finishes `durationDays` later. Used
+// both for the zero-lag earliest schedule (delay always 0) and for the
+// delay-aware display schedule below.
+function computeForwardPass(
+	tasks: SchedulingTask[],
+	edges: SchedulingEdge[],
+	delayOf: (id: number) => number
+): { start: Map<number, number>; finish: Map<number, number> } {
+	const durationOf = new Map(tasks.map((t) => [t.id, t.durationDays]));
+	const predecessorsOf = new Map<number, number[]>();
+	for (const task of tasks) predecessorsOf.set(task.id, []);
+	for (const edge of edges) predecessorsOf.get(edge.successorId)?.push(edge.predecessorId);
+
+	const start = new Map<number, number>();
+	const finish = new Map<number, number>();
+
+	function computeFinish(id: number): number {
+		if (finish.has(id)) return finish.get(id)!;
+		const preds = predecessorsOf.get(id) ?? [];
+		const floor = preds.length === 0 ? 0 : Math.max(...preds.map(computeFinish));
+		const taskStart = floor + delayOf(id);
+		const taskFinish = taskStart + (durationOf.get(id) ?? 0);
+		start.set(id, taskStart);
+		finish.set(id, taskFinish);
+		return taskFinish;
+	}
+
+	for (const task of tasks) computeFinish(task.id);
+	return { start, finish };
+}
+
 export function computeSchedule(
 	tasks: SchedulingTask[],
 	edges: SchedulingEdge[]
 ): Map<number, ScheduleEntry> {
 	const durationOf = new Map(tasks.map((t) => [t.id, t.durationDays]));
-	const predecessorsOf = new Map<number, number[]>();
 	const successorsOf = new Map<number, number[]>();
-	for (const task of tasks) {
-		predecessorsOf.set(task.id, []);
-		successorsOf.set(task.id, []);
-	}
-	for (const edge of edges) {
-		predecessorsOf.get(edge.successorId)?.push(edge.predecessorId);
-		successorsOf.get(edge.predecessorId)?.push(edge.successorId);
-	}
+	for (const task of tasks) successorsOf.set(task.id, []);
+	for (const edge of edges) successorsOf.get(edge.predecessorId)?.push(edge.successorId);
 
-	const earliestStart = new Map<number, number>();
-	const earliestFinish = new Map<number, number>();
-
-	function computeEarliest(id: number): number {
-		if (earliestFinish.has(id)) return earliestFinish.get(id)!;
-		const preds = predecessorsOf.get(id) ?? [];
-		const start = preds.length === 0 ? 0 : Math.max(...preds.map(computeEarliest));
-		const finish = start + (durationOf.get(id) ?? 0);
-		earliestStart.set(id, start);
-		earliestFinish.set(id, finish);
-		return finish;
-	}
-
-	for (const task of tasks) computeEarliest(task.id);
+	const { start: earliestStart, finish: earliestFinish } = computeForwardPass(
+		tasks,
+		edges,
+		() => 0
+	);
 
 	const projectFinish = Math.max(0, ...[...earliestFinish.values()]);
 
@@ -77,6 +94,37 @@ export function computeSchedule(
 			slack,
 			onCriticalPath: slack === 0
 		});
+	}
+	return result;
+}
+
+export interface DisplaySchedulingTask {
+	id: number;
+	durationDays: number;
+	startDelayDays: number;
+}
+
+export interface DisplayScheduleEntry {
+	start: number;
+	finish: number;
+}
+
+// Unlike computeSchedule's earliestStart/earliestFinish (a zero-lag "as soon as
+// possible" schedule used for critical-path analysis), this threads each task's
+// *actual*, delay-adjusted finish into its successors' floor. A dependency edge
+// only ever raises that floor - it never pins the successor to it - so manually
+// delaying a task pushes the display schedule of everything downstream without
+// ever letting a successor be shown before its predecessors finish.
+export function computeDisplaySchedule(
+	tasks: DisplaySchedulingTask[],
+	edges: SchedulingEdge[]
+): Map<number, DisplayScheduleEntry> {
+	const delayOf = new Map(tasks.map((t) => [t.id, t.startDelayDays]));
+	const { start, finish } = computeForwardPass(tasks, edges, (id) => delayOf.get(id) ?? 0);
+
+	const result = new Map<number, DisplayScheduleEntry>();
+	for (const task of tasks) {
+		result.set(task.id, { start: start.get(task.id)!, finish: finish.get(task.id)! });
 	}
 	return result;
 }

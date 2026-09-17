@@ -21,6 +21,7 @@ export const tasks = sqliteTable('tasks', {
 	status: text('status', { enum: ['todo', 'in_progress', 'done'] })
 		.notNull()
 		.default('todo'),
+	startDelayDays: integer('start_delay_days').notNull().default(0),
 	priorityRank: integer('priority_rank').notNull(),
 	createdAt: text('created_at').notNull()
 });

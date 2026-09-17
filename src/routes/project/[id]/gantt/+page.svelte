@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Gantt, Willow, type IApi } from 'wx-svelte-gantt';
-	import { toGanttTasks, toGanttLinks } from '$lib/gantt-data';
+	import { toGanttTasks, toGanttLinks, dateToOffsetDays } from '$lib/gantt-data';
 	import GanttTaskBar from '$lib/components/GanttTaskBar.svelte';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
@@ -21,7 +21,10 @@
 	let tasks = $derived(toGanttTasks(data.project.startDate, projectTasks));
 	let links = $derived(toGanttLinks(data.dependencies));
 
-	const columns = [{ id: 'text', header: 'Task', flexgrow: 1 }];
+	const columns = [
+		{ id: 'text', header: 'Task', flexgrow: 1, editor: 'text' },
+		{ id: 'start', header: 'Start', width: 110, editor: { type: 'datepicker' } }
+	];
 
 	async function patchGantt(body: Record<string, unknown>) {
 		await fetch(resolve('/project/[id]/gantt', { id: String(data.project.id) }), {
@@ -36,20 +39,41 @@
 	}
 
 	function initGantt(api: IApi) {
-		// Task start dates are computed by the critical-path scheduler from each
-		// task's duration and its predecessors - they aren't a stored field, so a
-		// task can't be moved to an arbitrary date. Only resizing a bar's end
-		// (changing its duration) maps to real data; block any drag that would
-		// move the bar's left edge (a whole-bar move or a left-edge resize).
+		// Dragging a bar can mean three different things - moving it, resizing its
+		// left edge, or resizing its right edge - and the pixel math to tell a move
+		// from a left-edge resize apart is ambiguous. Rather than guess, chart
+		// dragging stays limited to right-edge resize (changing duration); moving a
+		// task's date goes through the explicit "Start" grid column instead, which
+		// commits an unambiguous date. Block any drag that would move the bar's
+		// left edge (a whole-bar move or a left-edge resize).
 		api.intercept('drag-task', (ev) => {
 			if (ev.left === undefined) return;
 			const task = api.getTask(ev.id);
 			if (ev.left !== task.$x) return false;
 		});
 
-		// A blocked drag-task never produces a matching update-task, so any diff
-		// that reaches here came from an allowed end-edge resize.
+		// The "Task" and "Start" grid columns are the only editable surfaces
+		// (the chart itself stays drag-locked, see the intercept above); each
+		// commits by firing this same update-task event, but the grid always
+		// hands back the *whole* row - text and start included - regardless of
+		// which single cell was actually edited. Compare against the value the
+		// bar was last rendered with to tell which field genuinely changed.
 		api.on('update-task', async (ev) => {
+			const previous = tasks.find((t) => t.id === ev.id);
+			if (!previous) return;
+			if (
+				typeof ev.task?.text === 'string' &&
+				ev.task.text.trim() !== '' &&
+				ev.task.text !== previous.text
+			) {
+				await patchGantt({ type: 'title', taskId: ev.id, title: ev.task.text });
+				return;
+			}
+			if (ev.task?.start instanceof Date && ev.task.start.getTime() !== previous.start.getTime()) {
+				const requestedStartOffsetDays = dateToOffsetDays(data.project.startDate, ev.task.start);
+				await patchGantt({ type: 'delay', taskId: ev.id, requestedStartOffsetDays });
+				return;
+			}
 			if (typeof ev.diff !== 'number' || !ev.diff) return;
 			const task = projectTasks.find((t) => t.id === ev.id);
 			if (!task) return;

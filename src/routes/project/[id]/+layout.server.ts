@@ -4,7 +4,7 @@ import { getDb } from '$lib/server/db/client';
 import { getProject } from '$lib/server/repositories/projects';
 import { listTasksForProject } from '$lib/server/repositories/tasks';
 import { listDependenciesForProject } from '$lib/server/repositories/dependencies';
-import { computeSchedule } from '$lib/server/scheduling/cpm';
+import { computeSchedule, computeDisplaySchedule } from '$lib/server/scheduling/cpm';
 import { computeLayers } from '$lib/server/scheduling/layout';
 
 export const load: LayoutServerLoad = async ({ params, platform }) => {
@@ -24,6 +24,14 @@ export const load: LayoutServerLoad = async ({ params, platform }) => {
 		tasks.map((t) => ({ id: t.id, durationDays: t.durationDays })),
 		edges
 	);
+	const displaySchedule = computeDisplaySchedule(
+		tasks.map((t) => ({
+			id: t.id,
+			durationDays: t.durationDays,
+			startDelayDays: t.startDelayDays
+		})),
+		edges
+	);
 	const layers = computeLayers(
 		tasks.map((t) => t.id),
 		edges
@@ -32,6 +40,7 @@ export const load: LayoutServerLoad = async ({ params, platform }) => {
 	const tasksWithSchedule = tasks.map((task) => ({
 		...task,
 		schedule: schedule.get(task.id)!,
+		displaySchedule: displaySchedule.get(task.id)!,
 		layer: layers.get(task.id)!
 	}));
 
