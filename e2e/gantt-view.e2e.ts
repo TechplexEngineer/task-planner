@@ -12,11 +12,11 @@ test('shows dependent tasks and a milestone on the Gantt timeline with critical-
 
 	await page.getByPlaceholder('Title').fill('Buy bread');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Buy bread' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Buy bread' })).toBeVisible();
 
 	await page.getByPlaceholder('Title').fill('Spread peanut butter');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Spread peanut butter' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Spread peanut butter' })).toBeVisible();
 
 	const predecessorSelect = page.locator('select[name="predecessorId"]');
 	const successorSelect = page.locator('select[name="successorId"]');
@@ -30,7 +30,7 @@ test('shows dependent tasks and a milestone on the Gantt timeline with critical-
 	await page.getByPlaceholder('Title').fill('Sandwich ready');
 	await page.locator('select[name="type"]').selectOption('milestone');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Sandwich ready' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Sandwich ready' })).toBeVisible();
 
 	await predecessorSelect.selectOption({ label: 'Spread peanut butter' });
 	await successorSelect.selectOption({ label: 'Sandwich ready' });

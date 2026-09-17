@@ -10,11 +10,11 @@ test('dragging a Gantt row reorders tasks and persists across reload', async ({ 
 
 	await page.getByPlaceholder('Title').fill('Task A');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Task A' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Task A' })).toBeVisible();
 
 	await page.getByPlaceholder('Title').fill('Task B');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Task B' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Task B' })).toBeVisible();
 
 	await page.getByRole('link', { name: 'Gantt' }).click();
 	await expect(page.locator('h2', { hasText: 'Gantt' })).toBeVisible();
@@ -33,8 +33,10 @@ test('dragging a Gantt row reorders tasks and persists across reload', async ({ 
 	// Give the fire-and-forget PATCH a moment to land before reloading.
 	await page.waitForTimeout(200);
 	await page.reload();
+	await expect(page.locator('h2', { hasText: 'Gantt' })).toBeVisible();
 
 	await page.getByRole('link', { name: 'List' }).click();
-	const titles = await page.locator('li strong').allTextContents();
+	await page.waitForURL(/\/list$/);
+	const titles = await page.locator('tbody tr strong').allTextContents();
 	expect(titles.indexOf('Task B')).toBeLessThan(titles.indexOf('Task A'));
 });

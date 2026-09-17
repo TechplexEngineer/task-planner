@@ -10,7 +10,7 @@ test('dragging a task bar edge persists its duration across reload', async ({ pa
 
 	await page.getByPlaceholder('Title').fill('Bake bread');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Bake bread' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Bake bread' })).toBeVisible();
 
 	await page.getByRole('link', { name: 'Gantt' }).click();
 	await expect(page.locator('h2', { hasText: 'Gantt' })).toBeVisible();
@@ -32,10 +32,10 @@ test('dragging a task bar edge persists its duration across reload', async ({ pa
 
 	await page.getByRole('link', { name: 'List' }).click();
 	const durationText = await page
-		.locator('li')
+		.locator('tbody tr')
 		.filter({ hasText: 'Bake bread' })
-		.locator('span')
-		.last()
+		.locator('td')
+		.nth(3)
 		.textContent();
 	const duration = Number((durationText ?? '').replace('d', ''));
 	expect(duration).toBeGreaterThan(1);
