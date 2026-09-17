@@ -152,7 +152,7 @@
 			{data.tasks.find((t) => t.id === dep.successorId)?.title}
 			<form method="POST" action="?/deleteDependency" use:enhance>
 				<input type="hidden" name="id" value={dep.id} />
-				<button type="submit">Remove</button>
+				<button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
 			</form>
 		</li>
 	{/each}

@@ -280,7 +280,8 @@
 
 {#if selectedTask && popoverPosition}
 	<div class="details-popover" style={`left: ${popoverPosition.x}px; top: ${popoverPosition.y}px;`}>
-		<button onclick={() => (selectedTaskId = null)}>Close</button>
+		<button class="btn btn-secondary btn-sm" onclick={() => (selectedTaskId = null)}>Close</button>
+
 		<label>
 			Description
 			<textarea value={selectedTask.description} onchange={handleDescriptionChange}></textarea>
