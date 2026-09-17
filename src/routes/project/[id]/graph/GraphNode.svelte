@@ -60,7 +60,7 @@
 		if (!dragging) return;
 		dragging = false;
 		if (moved < 4) {
-			onOpenDetails(task.id);
+			startEditingTitle();
 			return;
 		}
 		onDragEnd(task.id, task.x, task.y);
@@ -93,7 +93,7 @@
 		handlePointerUp();
 		if (connectorDragActive) onConnectorDrop(task.id);
 	}}
-	ondblclick={startEditingTitle}
+	ondblclick={() => onOpenDetails(task.id)}
 	onpointerenter={() => (hovering = true)}
 	onpointerleave={() => (hovering = false)}
 >
