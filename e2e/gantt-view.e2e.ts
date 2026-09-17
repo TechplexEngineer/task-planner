@@ -52,6 +52,8 @@ test('shows dependent tasks and a milestone on the Gantt timeline with critical-
 	await expect(milestoneBar.locator('.critical')).toHaveCount(1);
 	await expect(page.locator('.label', { hasText: 'Sandwich ready' })).toBeVisible();
 
-	// No date-dragging: the readonly Gantt renders no progress marker or link-creation handles.
-	await expect(page.locator('.wx-progress-marker')).toHaveCount(0);
+	// No progress tracking, and dependency creation belongs to the list view's form,
+	// not the Gantt's own link-creation handles - both are hidden, not absent.
+	await expect(page.locator('.wx-progress-marker').first()).toBeHidden();
+	await expect(page.locator('.wx-link').first()).toBeHidden();
 });
