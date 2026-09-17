@@ -75,6 +75,36 @@ export const actions: Actions = {
 		await resetOffsetsForChangedLayers(db, projectId, before);
 	},
 
+	importTasks: async ({ request, params, platform }) => {
+		const db = getDb(platform!.env.DB);
+		const data = await request.formData();
+		const projectId = Number(params.id);
+		const titles = String(data.get('lines') ?? '')
+			.split('\n')
+			.map((line) => line.trim())
+			.filter((line) => line !== '');
+		if (titles.length === 0) {
+			return fail(400, { formName: 'importTasks', error: 'Enter at least one task' });
+		}
+
+		const before = await currentLayers(db, projectId);
+		let previousTask: { id: number } | undefined;
+		for (const title of titles) {
+			const task = await createTask(db, {
+				projectId,
+				title,
+				description: '',
+				type: 'task',
+				durationDays: 1
+			});
+			if (previousTask) {
+				await createDependency(db, projectId, previousTask.id, task.id);
+			}
+			previousTask = task;
+		}
+		await resetOffsetsForChangedLayers(db, projectId, before);
+	},
+
 	reorder: async ({ request, platform }) => {
 		const db = getDb(platform!.env.DB);
 		const data = await request.formData();

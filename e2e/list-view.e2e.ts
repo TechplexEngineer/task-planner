@@ -87,3 +87,26 @@ test('reordering tasks keeps the new order after the page data refetches', async
 		.poll(() => page.locator('li strong').allTextContents())
 		.toEqual(['Second task', 'First task']);
 });
+
+test('importing multiline text creates a chained task per line', async ({ page }) => {
+	const projectName = `E2E Import ${Date.now()}`;
+
+	await page.goto('/');
+	await page.getByLabel('New project name').fill(projectName);
+	await page.getByRole('button', { name: 'Create project' }).click();
+	await page.locator('li').filter({ hasText: projectName }).getByRole('link').click();
+
+	await expect(page.locator('h2', { hasText: 'Task list' })).toBeVisible();
+
+	await page
+		.getByPlaceholder('One task per line. Each line depends on the line above it.')
+		.fill('Design\nBuild\nShip');
+	await page.getByRole('button', { name: 'Import' }).click();
+
+	await expect
+		.poll(() => page.locator('li strong').allTextContents())
+		.toEqual(['Design', 'Build', 'Ship']);
+
+	await expect(page.locator('li').filter({ hasText: 'Design → Build' })).toBeVisible();
+	await expect(page.locator('li').filter({ hasText: 'Build → Ship' })).toBeVisible();
+});

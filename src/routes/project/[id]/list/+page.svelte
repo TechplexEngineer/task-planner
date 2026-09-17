@@ -82,6 +82,21 @@
 	<p class="error">{form.error}</p>
 {/if}
 
+<h3>Import tasks</h3>
+<form method="POST" action="?/importTasks" use:enhance class="mb-3">
+	<div class="mb-2">
+		<textarea
+			name="lines"
+			placeholder="One task per line. Each line depends on the line above it."
+			class="form-control"
+			rows="4"></textarea>
+	</div>
+	<button type="submit" class="btn btn-primary">Import</button>
+</form>
+{#if form?.formName === 'importTasks' && form.error}
+	<p class="error">{form.error}</p>
+{/if}
+
 <h3>Add dependency</h3>
 <form
 	method="POST"
