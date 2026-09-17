@@ -53,6 +53,15 @@
 					<li class="nav-item">
 						<a
 							class="nav-link"
+							class:active={currentMode === 'calendar'}
+							href={resolve('/project/[id]/calendar', { id: String(project.id) })}
+						>
+							Calendar
+						</a>
+					</li>
+					<li class="nav-item">
+						<a
+							class="nav-link"
 							class:active={currentMode === 'tree'}
 							href={resolve('/project/[id]/tree', { id: String(project.id) })}
 						>

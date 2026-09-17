@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-test('graph view renders tasks and dependency edges', async ({ page }) => {
-	const projectName = `E2E Graph ${Date.now()}`;
+test('dependency edges render an arrowhead pointing from ancestor to descendant', async ({
+	page
+}) => {
+	const projectName = `E2E Arrowheads ${Date.now()}`;
 
 	await page.goto('/');
 	await page.getByLabel('New project name').fill(projectName);
@@ -21,18 +23,14 @@ test('graph view renders tasks and dependency edges', async ({ page }) => {
 	await predecessorSelect.selectOption({ label: 'Buy bread' });
 	await successorSelect.selectOption({ label: 'Spread peanut butter' });
 	await page.getByRole('button', { name: 'Add dependency' }).click();
-	// Wait for the dependency's use:enhance submission (and its invalidateAll) to
-	// settle before navigating away - otherwise the still-in-flight form action can
-	// win a race against the Graph link's navigation and leave us on the List view.
 	await expect(
 		page.locator('li').filter({ hasText: 'Buy bread → Spread peanut butter' })
 	).toBeVisible();
 
 	await page.getByRole('link', { name: 'Graph', exact: true }).click();
-	await expect(page.locator('svg.graph-canvas')).toBeVisible();
-	await expect(page.locator('g[data-task-id] text').filter({ hasText: 'Buy bread' })).toBeVisible();
-	await expect(
-		page.locator('g[data-task-id] text').filter({ hasText: 'Spread peanut butter' })
-	).toBeVisible();
-	await expect(page.locator('line.edge')).toHaveCount(1);
+	await expect(page.locator('marker#dependency-arrowhead')).toHaveCount(1);
+	await expect(page.locator('line.edge')).toHaveAttribute(
+		'marker-end',
+		'url(#dependency-arrowhead)'
+	);
 });

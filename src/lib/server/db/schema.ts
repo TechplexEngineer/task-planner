@@ -24,6 +24,7 @@ export const tasks = sqliteTable('tasks', {
 		.default('todo'),
 	priorityRank: integer('priority_rank').notNull(),
 	treeRank: integer('tree_rank').notNull().default(0),
+	scheduledDate: text('scheduled_date'),
 	createdAt: text('created_at').notNull()
 });
 

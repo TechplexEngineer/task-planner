@@ -17,6 +17,7 @@ export interface TaskPatch {
 	type?: 'task' | 'milestone';
 	durationDays?: number;
 	status?: 'todo' | 'in_progress' | 'done';
+	scheduledDate?: string | null;
 }
 
 export async function listTasksForProject(db: Db, projectId: number) {

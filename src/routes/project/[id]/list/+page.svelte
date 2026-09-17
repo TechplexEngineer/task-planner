@@ -24,6 +24,25 @@
 	}
 </script>
 
+<div class="d-flex gap-2 align-items-center mb-3">
+	<form method="POST" action="?/renameProject" use:enhance class="d-flex gap-2 align-items-center">
+		<input
+			type="text"
+			name="name"
+			value={data.project.name}
+			aria-label="Rename project"
+			class="form-control"
+		/>
+		<button type="submit" class="btn btn-primary btn-sm">Rename</button>
+	</form>
+	<form method="POST" action="?/deleteProject" use:enhance>
+		<button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+	</form>
+</div>
+{#if form?.formName === 'renameProject' && form.error}
+	<p class="error">{form.error}</p>
+{/if}
+
 <h2>Task list</h2>
 
 <table class="table table-hover align-middle">
@@ -152,7 +171,7 @@
 			{data.tasks.find((t) => t.id === dep.successorId)?.title}
 			<form method="POST" action="?/deleteDependency" use:enhance>
 				<input type="hidden" name="id" value={dep.id} />
-				<button type="submit">Remove</button>
+				<button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
 			</form>
 		</li>
 	{/each}

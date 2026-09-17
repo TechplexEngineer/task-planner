@@ -14,7 +14,8 @@
 		onConnectorDrop,
 		connectorDragActive,
 		onDelete,
-		onOpenDetails
+		onOpenDetails,
+		onUnpin
 	}: {
 		task: PageData['tasks'][number];
 		viewport: Viewport;
@@ -27,6 +28,7 @@
 		connectorDragActive: boolean;
 		onDelete: (taskId: number) => void;
 		onOpenDetails: (taskId: number) => void;
+		onUnpin: (taskId: number) => void;
 	} = $props();
 
 	let dragging = $state(false);
@@ -173,6 +175,17 @@
 				dominant-baseline="middle">×</text
 			>
 		</g>
+		{#if task.pinned}
+			<g
+				class="unpin-button"
+				onpointerdown={(e) => e.stopPropagation()}
+				onclick={() => onUnpin(task.id)}
+			>
+				<circle cx={task.x + 8} cy={task.y + 8} r="8" />
+				<text x={task.x + 8} y={task.y + 8} text-anchor="middle" dominant-baseline="middle">📌</text
+				>
+			</g>
+		{/if}
 	{/if}
 </g>
 
@@ -233,5 +246,15 @@
 		fill: white;
 		pointer-events: none;
 		font-size: 12px;
+	}
+	.unpin-button {
+		cursor: pointer;
+	}
+	.unpin-button circle {
+		fill: #333;
+	}
+	.unpin-button text {
+		pointer-events: none;
+		font-size: 10px;
 	}
 </style>
