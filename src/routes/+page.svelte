@@ -21,11 +21,11 @@
 					aria-label="Rename project"
 					class="form-control"
 				/>
-				<button type="submit">Rename</button>
+				<button type="submit" class="btn btn-primary btn-sm">Rename</button>
 			</form>
 			<form method="POST" action="?/delete" use:enhance>
 				<input type="hidden" name="id" value={project.id} />
-				<button type="submit">Delete</button>
+				<button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
 			</form>
 		</li>
 	{/each}
@@ -40,5 +40,5 @@
 		required
 		class="form-control"
 	/>
-	<button type="submit">Create project</button>
+	<button type="submit" class="btn btn-primary">Create project</button>
 </form>
