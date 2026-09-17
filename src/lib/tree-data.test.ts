@@ -7,6 +7,7 @@ function task(overrides: Partial<TreeTaskInput> & { id: number }): TreeTaskInput
 		treeRank: 0,
 		title: `Task ${overrides.id}`,
 		type: 'task',
+		clientKey: overrides.id,
 		...overrides
 	};
 }
