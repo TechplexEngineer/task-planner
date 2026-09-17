@@ -34,7 +34,7 @@ way as the existing migration.
 
 `deleteTask` (in `src/lib/server/repositories/tasks.ts`, already shared by
 List/Graph) is extended to recursively delete descendants first, so deleting
-a task from *any* view can never leave orphaned children with a dangling
+a task from _any_ view can never leave orphaned children with a dangling
 `parent_id`.
 
 ## New repository functions (`tasks.ts`)
@@ -89,7 +89,7 @@ from List's `◆`/`▢` convention) and an editable title `<input>`, indented by
 - **Backspace** when the title is empty and cursor is at position 0: deletes
   the row (only if childless) via `DELETE`, then focuses the end of the
   previous visible row's title. No-op (does nothing) if the row has children.
-- **ArrowUp / ArrowDown**: move focus to the previous/next *visible* row's
+- **ArrowUp / ArrowDown**: move focus to the previous/next _visible_ row's
   title (respecting collapsed subtrees), no persistence involved.
 
 Indent/outdent and children always travel together, since nesting is defined

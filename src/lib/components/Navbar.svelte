@@ -50,6 +50,15 @@
 							Gantt
 						</a>
 					</li>
+					<li class="nav-item">
+						<a
+							class="nav-link"
+							class:active={currentMode === 'tree'}
+							href={resolve('/project/[id]/tree', { id: String(project.id) })}
+						>
+							Tree
+						</a>
+					</li>
 				</ul>
 				<span class="navbar-text me-3">{project.name}</span>
 				<a class="btn btn-outline-light btn-sm" href={resolve('/')}>All projects</a>
