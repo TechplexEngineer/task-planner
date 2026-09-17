@@ -10,10 +10,10 @@ test('deleting a dependency edge and then a task removes them from the graph', a
 
 	await page.getByPlaceholder('Title').fill('First');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'First' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'First' })).toBeVisible();
 	await page.getByPlaceholder('Title').fill('Second');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.locator('li').filter({ hasText: 'Second' })).toBeVisible();
+	await expect(page.locator('tbody tr').filter({ hasText: 'Second' })).toBeVisible();
 
 	const predecessorSelect = page.locator('select[name="predecessorId"]');
 	const successorSelect = page.locator('select[name="successorId"]');
@@ -25,7 +25,7 @@ test('deleting a dependency edge and then a task removes them from the graph', a
 	// win a race against the Graph link's navigation and leave us on the List view.
 	await expect(page.locator('li').filter({ hasText: 'First → Second' })).toBeVisible();
 
-	await page.getByRole('link', { name: 'Graph' }).click();
+	await page.getByRole('link', { name: 'Graph', exact: true }).click();
 	await expect(page.locator('line.edge')).toHaveCount(1);
 
 	// Playwright's actionability check computes visibility from a content quad that,

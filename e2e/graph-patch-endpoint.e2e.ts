@@ -16,7 +16,7 @@ test('PATCH endpoint updates position and fields', async ({ page, request }) => 
 	if (!projectId) throw new Error('could not extract project id from URL');
 
 	const taskIdInput = await page
-		.locator('li')
+		.locator('tbody tr')
 		.filter({ hasText: 'Solo task' })
 		.locator('form[action="?/deleteTask"] input[name="id"]')
 		.getAttribute('value');

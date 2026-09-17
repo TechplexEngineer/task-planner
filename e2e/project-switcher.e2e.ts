@@ -10,15 +10,15 @@ test('create, rename, and delete a project', async ({ page }) => {
 
 	const row = page.locator('li').filter({ hasText: originalName });
 	await expect(row).toBeVisible();
+	await row.getByRole('link').click();
 
-	await row.getByLabel('Rename project').fill(renamedName);
-	await row.getByRole('button', { name: 'Rename' }).click();
-	await expect(page.locator('li').filter({ hasText: renamedName })).toBeVisible();
+	await expect(page.locator('h1', { hasText: originalName })).toBeVisible();
 
-	await page
-		.locator('li')
-		.filter({ hasText: renamedName })
-		.getByRole('button', { name: 'Delete' })
-		.click();
+	await page.getByLabel('Rename project').fill(renamedName);
+	await page.getByRole('button', { name: 'Rename' }).click();
+	await expect(page.locator('h1', { hasText: renamedName })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Delete' }).click();
+	await expect(page).toHaveURL('/');
 	await expect(page.locator('li').filter({ hasText: renamedName })).not.toBeVisible();
 });

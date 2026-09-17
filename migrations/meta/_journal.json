@@ -12,8 +12,22 @@
     {
       "idx": 1,
       "version": "6",
-      "when": 1789645126837,
-      "tag": "0001_free_scorpion",
+      "when": 1789609936499,
+      "tag": "0001_ordinary_ravenous",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789645063392,
+      "tag": "0002_slippery_mesmero",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789646468458,
+      "tag": "0003_bumpy_captain_midlands",
       "breakpoints": true
     }
   ]

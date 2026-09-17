@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "39c5d62b-c423-44f5-aee1-ca869a561b27",
-  "prevId": "c9eefec0-2f07-4b5b-8f5b-b7c1b5dcd85f",
+  "id": "49bfee9b-88cc-412d-bb55-a1f4e083b606",
+  "prevId": "604af955-067a-46e1-a377-e2e5b1c47ffb",
   "tables": {
     "dependencies": {
       "name": "dependencies",
@@ -184,6 +184,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "title": {
           "name": "title",
           "type": "text",
@@ -223,12 +230,28 @@
           "autoincrement": false,
           "default": "'todo'"
         },
+        "start_delay_days": {
+          "name": "start_delay_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
         "priority_rank": {
           "name": "priority_rank",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "tree_rank": {
+          "name": "tree_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "scheduled_date": {
           "name": "scheduled_date",
@@ -253,6 +276,19 @@
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tasks_parent_id_tasks_id_fk": {
+          "name": "tasks_parent_id_tasks_id_fk",
+          "tableFrom": "tasks",
+          "tableTo": "tasks",
+          "columnsFrom": [
+            "parent_id"
           ],
           "columnsTo": [
             "id"

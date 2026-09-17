@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 export const projects = sqliteTable('projects', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -12,6 +12,7 @@ export const tasks = sqliteTable('tasks', {
 	projectId: integer('project_id')
 		.notNull()
 		.references(() => projects.id),
+	parentId: integer('parent_id').references((): AnySQLiteColumn => tasks.id),
 	title: text('title').notNull(),
 	description: text('description').notNull().default(''),
 	type: text('type', { enum: ['task', 'milestone'] })
@@ -23,6 +24,8 @@ export const tasks = sqliteTable('tasks', {
 		.default('todo'),
 	startDelayDays: integer('start_delay_days').notNull().default(0),
 	priorityRank: integer('priority_rank').notNull(),
+	treeRank: integer('tree_rank').notNull().default(0),
+	scheduledDate: text('scheduled_date'),
 	createdAt: text('created_at').notNull()
 });
 
