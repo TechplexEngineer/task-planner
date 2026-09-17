@@ -4,18 +4,39 @@
 	import { resolve } from '$app/paths';
 	import { flattenTree, type TreeTaskInput } from '$lib/tree-data';
 
-	let { projectId, tasks: initialTasks }: { projectId: number; tasks: TreeTaskInput[] } = $props();
+	let {
+		projectId,
+		tasks: initialTasks
+	}: { projectId: number; tasks: Omit<TreeTaskInput, 'clientKey'>[] } = $props();
 
-	let tasks = $state(initialTasks.map((t) => ({ ...t })));
+	let tasks = $state(initialTasks.map((t) => ({ ...t, clientKey: t.id })));
 	let collapsed = new SvelteSet<number>();
 	let rows = $derived(flattenTree(tasks, collapsed));
 
 	let inputEls: Record<number, HTMLInputElement> = {};
 	let titleTimers: Record<number, ReturnType<typeof setTimeout>> = {};
+	let nextTempId = -1;
 
-	async function focusRow(taskId: number) {
+	/**
+	 * Serializes every server-confirming operation (creation, indent, outdent,
+	 * delete, title flush) so that a row's own creation always resolves before any
+	 * later action on that same row is sent to the server - even though the local,
+	 * optimistic insert + focus-move for Enter happens immediately, outside this
+	 * chain, so a fast typist's next keystrokes always have a real input to land in.
+	 */
+	let mutationChain: Promise<void> = Promise.resolve();
+	function chain(fn: () => Promise<void>): Promise<void> {
+		const next = mutationChain.then(fn, fn);
+		mutationChain = next.then(
+			() => undefined,
+			() => undefined
+		);
+		return next;
+	}
+
+	async function focusRow(clientKey: number) {
 		await tick();
-		inputEls[taskId]?.focus();
+		inputEls[clientKey]?.focus();
 	}
 
 	function endpoint() {
@@ -26,7 +47,7 @@
 		ok?: boolean;
 		error?: string;
 		newTaskId?: number;
-		tasks?: TreeTaskInput[];
+		tasks?: Omit<TreeTaskInput, 'clientKey'>[];
 	}
 
 	async function send(method: 'POST' | 'PATCH' | 'DELETE', requestBody: unknown) {
@@ -39,85 +60,135 @@
 		return { ok: response.ok, body };
 	}
 
-	async function createAfter(afterTaskId: number | null, parentId: number | null) {
-		const { body } = await send('POST', { parentId, afterTaskId });
-		if (body.tasks) tasks = body.tasks;
-		if (body.newTaskId !== undefined) await focusRow(body.newTaskId);
+	function currentTask(clientKey: number) {
+		return tasks.find((t) => t.clientKey === clientKey);
+	}
+
+	/** Merges a fresh authoritative list from the server, preserving each row's
+	 * stable clientKey and keeping any not-yet-confirmed optimistic rows (negative
+	 * id) that the server doesn't know about yet. */
+	function mergeServerTasks(serverTasks: Omit<TreeTaskInput, 'clientKey'>[]): TreeTaskInput[] {
+		const clientKeyByRealId = new Map(tasks.filter((t) => t.id >= 0).map((t) => [t.id, t.clientKey]));
+		const confirmed = serverTasks.map((t) => ({ ...t, clientKey: clientKeyByRealId.get(t.id) ?? t.id }));
+		const stillPending = tasks.filter((t) => t.id < 0);
+		return [...confirmed, ...stillPending];
+	}
+
+	function siblingsOf(parentId: number | null) {
+		return tasks.filter((t) => t.parentId === parentId).sort((a, b) => a.treeRank - b.treeRank || a.id - b.id);
+	}
+
+	function insertOptimistic(afterId: number | null, parentId: number | null) {
+		const siblings = siblingsOf(parentId);
+		const afterIndex = afterId === null ? siblings.length - 1 : siblings.findIndex((t) => t.id === afterId);
+		const beforeRank = afterIndex >= 0 ? siblings[afterIndex].treeRank : -1;
+		const afterRank = afterIndex + 1 < siblings.length ? siblings[afterIndex + 1].treeRank : beforeRank + 2;
+		const clientKey = nextTempId--;
+		tasks = [
+			...tasks,
+			{ id: clientKey, clientKey, parentId, treeRank: (beforeRank + afterRank) / 2, title: '', type: 'task' }
+		];
+		return clientKey;
+	}
+
+	async function createAfter(afterClientKey: number | null, parentId: number | null) {
+		const afterId = afterClientKey === null ? null : currentTask(afterClientKey)?.id ?? null;
+		const newClientKey = insertOptimistic(afterId, parentId);
+		focusRow(newClientKey);
+		await chain(async () => {
+			const resolvedAfterId = afterClientKey === null ? null : currentTask(afterClientKey)?.id ?? null;
+			const { body } = await send('POST', { parentId, afterTaskId: resolvedAfterId });
+			if (body.newTaskId === undefined) return;
+			tasks = tasks.map((t) => (t.clientKey === newClientKey ? { ...t, id: body.newTaskId! } : t));
+		});
 	}
 
 	function handleAddRootTask() {
 		createAfter(null, null);
 	}
 
-	function handleTitleInput(taskId: number, value: string) {
-		const task = tasks.find((t) => t.id === taskId);
+	function handleTitleInput(clientKey: number, value: string) {
+		const task = currentTask(clientKey);
 		if (task) task.title = value;
-		clearTimeout(titleTimers[taskId]);
-		titleTimers[taskId] = setTimeout(() => {
-			send('PATCH', { type: 'title', taskId, title: value });
+		clearTimeout(titleTimers[clientKey]);
+		titleTimers[clientKey] = setTimeout(() => {
+			flushTitle(clientKey);
 		}, 400);
 	}
 
-	function flushTitle(taskId: number) {
-		clearTimeout(titleTimers[taskId]);
-		const task = tasks.find((t) => t.id === taskId);
-		if (!task) return Promise.resolve();
-		return send('PATCH', { type: 'title', taskId, title: task.title });
+	function flushTitle(clientKey: number) {
+		clearTimeout(titleTimers[clientKey]);
+		return chain(async () => {
+			const task = currentTask(clientKey);
+			if (!task || task.id < 0) return;
+			await send('PATCH', { type: 'title', taskId: task.id, title: task.title });
+		});
 	}
 
-	async function handleIndent(taskId: number) {
-		const { body } = await send('PATCH', { type: 'indent', taskId });
-		if (body.tasks) tasks = body.tasks;
-		await focusRow(taskId);
+	function handleIndent(clientKey: number) {
+		return chain(async () => {
+			const task = currentTask(clientKey);
+			if (!task || task.id < 0) return;
+			const { body } = await send('PATCH', { type: 'indent', taskId: task.id });
+			if (body.tasks) tasks = mergeServerTasks(body.tasks);
+			await focusRow(clientKey);
+		});
 	}
 
-	async function handleOutdent(taskId: number) {
-		const { body } = await send('PATCH', { type: 'outdent', taskId });
-		if (body.tasks) tasks = body.tasks;
-		await focusRow(taskId);
+	function handleOutdent(clientKey: number) {
+		return chain(async () => {
+			const task = currentTask(clientKey);
+			if (!task || task.id < 0) return;
+			const { body } = await send('PATCH', { type: 'outdent', taskId: task.id });
+			if (body.tasks) tasks = mergeServerTasks(body.tasks);
+			await focusRow(clientKey);
+		});
 	}
 
-	async function handleBackspaceEmpty(taskId: number) {
-		const rowIndex = rows.findIndex((r) => r.id === taskId);
+	function handleBackspaceEmpty(clientKey: number) {
+		const rowIndex = rows.findIndex((r) => r.clientKey === clientKey);
 		if (rowIndex <= 0) return;
 		if (rows[rowIndex].hasChildren) return;
-		const previousRow = rows[rowIndex - 1];
-		const { ok } = await send('DELETE', { taskId });
-		if (!ok) return;
-		tasks = tasks.filter((t) => t.id !== taskId);
-		await focusRow(previousRow.id);
+		const previousClientKey = rows[rowIndex - 1].clientKey;
+		return chain(async () => {
+			const task = currentTask(clientKey);
+			if (!task) return;
+			if (task.id >= 0) {
+				const { ok } = await send('DELETE', { taskId: task.id });
+				if (!ok) return;
+			}
+			tasks = tasks.filter((t) => t.clientKey !== clientKey);
+			await focusRow(previousClientKey);
+		});
 	}
 
-	async function handleKeydown(e: KeyboardEvent, taskId: number) {
+	function handleKeydown(e: KeyboardEvent, row: { clientKey: number; parentId: number | null }) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
-			const row = rows.find((r) => r.id === taskId);
-			if (row) {
-				await flushTitle(taskId);
-				createAfter(taskId, row.parentId);
-			}
+			flushTitle(row.clientKey);
+			createAfter(row.clientKey, row.parentId);
 		} else if (e.key === 'Tab' && !e.shiftKey) {
 			e.preventDefault();
-			await flushTitle(taskId);
-			handleIndent(taskId);
+			flushTitle(row.clientKey);
+			handleIndent(row.clientKey);
 		} else if (e.key === 'Tab' && e.shiftKey) {
 			e.preventDefault();
-			await flushTitle(taskId);
-			handleOutdent(taskId);
+			flushTitle(row.clientKey);
+			handleOutdent(row.clientKey);
 		} else if (e.key === 'Backspace') {
 			const input = e.target as HTMLInputElement;
 			if (input.value === '' && input.selectionStart === 0) {
 				e.preventDefault();
-				handleBackspaceEmpty(taskId);
+				handleBackspaceEmpty(row.clientKey);
 			}
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			const idx = rows.findIndex((r) => r.id === taskId);
-			if (idx > 0) inputEls[rows[idx - 1].id]?.focus();
+			const idx = rows.findIndex((r) => r.clientKey === row.clientKey);
+			if (idx > 0) inputEls[rows[idx - 1].clientKey]?.focus();
 		} else if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			const idx = rows.findIndex((r) => r.id === taskId);
-			if (idx >= 0 && idx < rows.length - 1) inputEls[rows[idx + 1].id]?.focus();
+			const idx = rows.findIndex((r) => r.clientKey === row.clientKey);
+			if (idx >= 0 && idx < rows.length - 1) inputEls[rows[idx + 1].clientKey]?.focus();
 		}
 	}
 
@@ -128,7 +199,7 @@
 </script>
 
 <div class="task-tree">
-	{#each rows as row (row.id)}
+	{#each rows as row (row.clientKey)}
 		<div class="tree-row" style={`padding-left: ${row.depth * 20}px`}>
 			{#if row.hasChildren}
 				<button
@@ -145,11 +216,11 @@
 			<span class="type-icon">{row.type === 'milestone' ? '◆' : '▢'}</span>
 			<input
 				class="title-input"
-				bind:this={inputEls[row.id]}
-				value={tasks.find((t) => t.id === row.id)?.title ?? ''}
-				oninput={(e) => handleTitleInput(row.id, (e.target as HTMLInputElement).value)}
-				onblur={() => flushTitle(row.id)}
-				onkeydown={(e) => handleKeydown(e, row.id)}
+				bind:this={inputEls[row.clientKey]}
+				value={tasks.find((t) => t.clientKey === row.clientKey)?.title ?? ''}
+				oninput={(e) => handleTitleInput(row.clientKey, (e.target as HTMLInputElement).value)}
+				onblur={() => flushTitle(row.clientKey)}
+				onkeydown={(e) => handleKeydown(e, row)}
 			/>
 		</div>
 	{/each}

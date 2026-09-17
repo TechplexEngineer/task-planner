@@ -1,5 +1,13 @@
 export interface TreeTaskInput {
 	id: number;
+	/**
+	 * Stable rendering identity, separate from `id`. A task created optimistically
+	 * client-side keeps the same `clientKey` for its whole lifetime even after `id`
+	 * is swapped from a temporary negative placeholder to the server-assigned id,
+	 * so Svelte's keyed each-block never destroys/recreates its DOM node (and loses
+	 * focus) during that swap.
+	 */
+	clientKey: number;
 	parentId: number | null;
 	treeRank: number;
 	title: string;
@@ -8,6 +16,7 @@ export interface TreeTaskInput {
 
 export interface TreeRow {
 	id: number;
+	clientKey: number;
 	parentId: number | null;
 	title: string;
 	type: 'task' | 'milestone';
@@ -32,6 +41,7 @@ export function flattenTree(tasks: TreeTaskInput[], collapsedIds: Set<number>): 
 			const hasChildren = (childrenByParent.get(task.id) ?? []).length > 0;
 			rows.push({
 				id: task.id,
+				clientKey: task.clientKey,
 				parentId: task.parentId,
 				title: task.title,
 				type: task.type,
